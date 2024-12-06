@@ -1,2 +1,3 @@
-# cogito
-Cogito is a zig module for `comptime` and metaprogramming
+# Cogito
+
+Cogito is a zig module for `comptime` and metaprogramming.
