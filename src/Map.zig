@@ -274,3 +274,11 @@ test removeOrLeave {
         try std.testing.expect(!@hasField(map.type, "not_key"));
     }
 }
+
+test has {
+    comptime {
+        var map = Map.from(.{ .key = 1 });
+        try std.testing.expect(map.has("key"));
+        try std.testing.expect(!map.has("not_key"));
+    }
+}
