@@ -304,6 +304,21 @@ test replaceOrErr {
     }
 }
 
+test replaceOrLeave {
+    comptime {
+        var map = Map.from(.{ .key = 1 });
+
+        try std.testing.expectEqual(1, (map.type{}).key);
+        try std.testing.expect(!@hasField(map.type, "not_key"));
+
+        map.replaceOrLeave("key", 2);
+        map.replaceOrLeave("not_key", 2);
+
+        try std.testing.expectEqual(2, (map.type{}).key);
+        try std.testing.expect(!@hasField(map.type, "not_key"));
+    }
+}
+
 test has {
     comptime {
         var map = Map.from(.{ .key = 1 });
