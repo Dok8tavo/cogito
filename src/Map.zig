@@ -282,3 +282,11 @@ test has {
         try std.testing.expect(!map.has("not_key"));
     }
 }
+
+test Get {
+    comptime {
+        const map = Map.from(.{ .key = 1 });
+        try std.testing.expectEqual(comptime_int, Map.Get(map, "key"));
+        try std.testing.expectEqual(noreturn, Map.Get(map, "not_key"));
+    }
+}
