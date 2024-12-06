@@ -241,3 +241,21 @@ test remove {
         try std.testing.expect(!@hasField(map.type, "key"));
     }
 }
+
+test removeOrErr {
+    comptime {
+        var map = Map.from(.{ .key = 1 });
+
+        try std.testing.expect(@hasField(map.type, "key"));
+        try std.testing.expect(!@hasField(map.type, "not_key"));
+
+        const remove_key = map.removeOrErr("key");
+        const remove_not_key = map.removeOrErr("not_key");
+
+        try std.testing.expect(!@hasField(map.type, "key"));
+        try std.testing.expect(!@hasField(map.type, "not_key"));
+
+        try std.testing.expectEqual(void{}, remove_key);
+        try std.testing.expectError(RemoveError.KeyDoesNotExist, remove_not_key);
+    }
+}
