@@ -290,3 +290,11 @@ test Get {
         try std.testing.expectEqual(noreturn, Map.Get(map, "not_key"));
     }
 }
+
+test get {
+    comptime {
+        const map = Map.from(.{ .key = 1 });
+        try std.testing.expectEqual(1, map.get("key"));
+        try std.testing.expectEqual(null, map.get("not_key"));
+    }
+}
