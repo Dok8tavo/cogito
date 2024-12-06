@@ -259,3 +259,18 @@ test removeOrErr {
         try std.testing.expectError(RemoveError.KeyDoesNotExist, remove_not_key);
     }
 }
+
+test removeOrLeave {
+    comptime {
+        var map = Map.from(.{ .key = 1 });
+
+        try std.testing.expect(@hasField(map.type, "key"));
+        try std.testing.expect(!@hasField(map.type, "not_key"));
+
+        map.removeOrLeave("key");
+        map.removeOrLeave("not_key");
+
+        try std.testing.expect(!@hasField(map.type, "key"));
+        try std.testing.expect(!@hasField(map.type, "not_key"));
+    }
+}
