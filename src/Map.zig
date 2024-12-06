@@ -259,3 +259,14 @@ test addOrErr {
         );
     }
 }
+
+test addOrLeave {
+    comptime {
+        var map = Map.from(.{ .key1 = 1 });
+        map.addOrLeave("key1", 2); // does nothing
+        map.addOrLeave("key2", 3);
+
+        try std.testing.expectEqual(1, (map.type{}).key1);
+        try std.testing.expectEqual(3, (map.type{}).key2);
+    }
+}
