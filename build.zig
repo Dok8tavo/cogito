@@ -28,6 +28,12 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
     const root = b.path("src/root.zig");
 
+    _ = b.addModule("cogito", .{
+        .root_source_file = root,
+        .target = target,
+        .optimize = optimize,
+    });
+
     const object = b.addObject(.{
         .name = "cogito",
         .root_source_file = root,
