@@ -281,8 +281,8 @@ test replace {
         var map = Map.from(.{ .key = 1 });
 
         try std.testing.expectEqual(1, (map.type{}).key);
-        map.replace("key", 2);
-        try std.testing.expectEqual(2, (map.type{}).key);
+        map.replace("key", "not even a `comptime_int`");
+        try std.testing.expectEqualStrings("not even a `comptime_int`", (map.type{}).key);
     }
 }
 
