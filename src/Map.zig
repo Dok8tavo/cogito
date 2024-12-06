@@ -286,6 +286,24 @@ test replace {
     }
 }
 
+test replaceOrErr {
+    comptime {
+        var map = Map.from(.{ .key = 1 });
+
+        try std.testing.expectEqual(1, (map.type{}).key);
+        try std.testing.expect(!@hasField(map.type, "not_key"));
+
+        const replace_key = map.replaceOrErr("key", 2);
+        const replace_not_key = map.replaceOrErr("not_key", 2);
+
+        try std.testing.expectEqual(2, (map.type{}).key);
+        try std.testing.expect(!@hasField(map.type, "not_key"));
+
+        try std.testing.expectEqual(void{}, replace_key);
+        try std.testing.expectError(RemoveError.KeyDoesNotExist, replace_not_key);
+    }
+}
+
 test has {
     comptime {
         var map = Map.from(.{ .key = 1 });
