@@ -199,6 +199,7 @@ fn info(comptime map: Map) std.builtin.Type.Struct {
     return @typeInfo(map.type).Struct;
 }
 
+// == Testing ==
 test add {
     comptime {
         var map = Map{};
@@ -272,6 +273,16 @@ test removeOrLeave {
 
         try std.testing.expect(!@hasField(map.type, "key"));
         try std.testing.expect(!@hasField(map.type, "not_key"));
+    }
+}
+
+test replace {
+    comptime {
+        var map = Map.from(.{ .key = 1 });
+
+        try std.testing.expectEqual(1, (map.type{}).key);
+        map.replace("key", 2);
+        try std.testing.expectEqual(2, (map.type{}).key);
     }
 }
 
