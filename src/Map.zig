@@ -34,34 +34,34 @@ const std = @import("std");
 const KeyValue = std.builtin.Type.StructField;
 const Map = @This();
 
-pub fn from(comptime from_struct: anytype) Map {
-    const FromStruct = @TypeOf(from_struct);
-    var struct_info = @typeInfo(FromStruct);
+pub fn from(comptime kv_struct: anytype) Map {
+    const KVStruct = @TypeOf(kv_struct);
+    var kv_info = @typeInfo(KVStruct);
 
-    if (struct_info != .Struct) root.compileError(
+    if (kv_info != .Struct) root.compileError(
         "A map must be made from a `.Struct`, not a `.{s}` like `{s}`!",
-        .{ @tagName(struct_info), @typeName(FromStruct) },
+        .{ @tagName(kv_info), @typeName(KVStruct) },
     );
 
-    if (struct_info.Struct.is_tuple) root.compileError(
+    if (kv_info.Struct.is_tuple) root.compileError(
         "A map must be made from a struct, not a tuple like `{s}`!",
-        .{@typeName(FromStruct)},
+        .{@typeName(KVStruct)},
     );
 
     var fields: []const KeyValue = &.{};
-    for (struct_info.Struct.fields) |field| {
+    for (kv_info.Struct.fields) |field| {
         fields = fields ++ &[_]KeyValue{.{
             .alignment = field.alignment,
-            .default_value = @ptrCast(&@field(from_struct, field.name)),
+            .default_value = @ptrCast(&@field(kv_struct, field.name)),
             .is_comptime = true,
             .name = field.name,
             .type = field.type,
         }};
     }
 
-    struct_info.Struct.fields = fields;
+    kv_info.Struct.fields = fields;
 
-    return Map{ .type = @Type(struct_info) };
+    return Map{ .type = @Type(kv_info) };
 }
 
 // == Accessing items ==
@@ -130,37 +130,6 @@ pub fn add(
     }};
 
     map.type = @Type(.{ .Struct = struct_info });
-}
-
-// == Adding multiple items ==
-pub fn concatMap(comptime map: *Map, comptime other_map: Map) void {
-    var map_info = map.info();
-    const other_map_info = other_map.info();
-    map_info.fields = map_info.fields ++ other_map_info.fields;
-    map.type = @Type(.{ .Struct = map_info });
-}
-
-pub fn concatMapOrErr(comptime map: *Map, comptime other_map: Map) AddError!void {
-    for (other_map.info().fields) |field| if (map.has(field.name))
-        return AddError.KeyAlreadyExists;
-    map.concatMap(other_map);
-}
-
-pub fn concatMapOrLeave(comptime map: *Map, comptime other_map: Map) AddError!void {
-    for (other_map.info().fields) |field| if (!map.has(field.name))
-        map.addOrLeave(field.name, @as(*const field.type, @ptrCast(field.default_value)).*);
-}
-
-pub fn concat(comptime map: *Map, comptime items: anytype) void {
-    return map.concatMap(Map.from(items));
-}
-
-pub fn concatOrErr(comptime map: *Map, comptime items: anytype) AddError!void {
-    return map.concatMapOrErr(Map.from(items));
-}
-
-pub fn concatOrLeave(comptime map: *Map, comptime items: anytype) void {
-    return map.concatMapOrLeave(Map.from(items));
 }
 
 // == Removing items ==
@@ -240,23 +209,15 @@ test add {
 
 test addOrErr {
     comptime {
-        var map = Map.from(.{ .key = 1 });
-        try std.testing.expectError(
-            AddError.KeyAlreadyExists,
-            map.addOrErr("key", 2),
-        );
+        var map = Map.from(.{ .key1 = 1 });
+        const add_key1 = map.addOrErr("key1", 2); // this is an error
+        const add_key2 = map.addOrErr("key2", 3); // this isn't
 
-        try std.testing.expectEqual(
-            1,
-            @field(map.type{}, "key"),
-        );
+        try std.testing.expectError(AddError.KeyAlreadyExists, add_key1);
+        try std.testing.expectEqual(void{}, add_key2);
 
-        try map.addOrErr("key2", 2);
-
-        try std.testing.expectEqual(
-            2,
-            @field(map.type{}, "key2"),
-        );
+        try std.testing.expectEqual(1, (map.type{}).key1);
+        try std.testing.expectEqual(3, (map.type{}).key2);
     }
 }
 
@@ -268,5 +229,15 @@ test addOrLeave {
 
         try std.testing.expectEqual(1, (map.type{}).key1);
         try std.testing.expectEqual(3, (map.type{}).key2);
+    }
+}
+
+test remove {
+    comptime {
+        var map = Map.from(.{ .key = 1 });
+
+        try std.testing.expect(@hasField(map.type, "key"));
+        map.remove("key");
+        try std.testing.expect(!@hasField(map.type, "key"));
     }
 }
