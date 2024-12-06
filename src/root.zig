@@ -20,3 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
+
+const std = @import("std");
+
+pub const Map = @import("Map.zig");
+
+pub fn compileError(comptime fmt: []const u8, comptime args: anytype) noreturn {
+    @compileError(std.fmt.comptimePrint(fmt, args));
+}
+
+test {
+    _ = Map;
+}
