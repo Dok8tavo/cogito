@@ -36,7 +36,7 @@ pub fn from(comptime items: anytype) Set {
     }
 }
 
-pub fn has(comptime set: Set, comptime item: []const u8) bool {
+pub fn has(comptime set: Set, comptime item: anytype) bool {
     return set.map.has(item);
 }
 
@@ -45,32 +45,32 @@ pub fn size(comptime set: Set) usize {
 }
 
 // == Adding items ==
-pub fn add(comptime set: *Set, comptime item: []const u8) void {
+pub fn add(comptime set: *Set, comptime item: anytype) void {
     set.map.add(item, {});
 }
 
-pub fn addOrErr(comptime set: *Set, comptime item: []const u8) Map.AddError!void {
+pub fn addOrErr(comptime set: *Set, comptime item: anytype) Map.AddError!void {
     try set.map.addOrErr(item, {});
 }
 
-pub fn addOrLeave(comptime set: *Set, comptime item: []const u8) void {
+pub fn addOrLeave(comptime set: *Set, comptime item: anytype) void {
     set.map.addOrLeave(item, {});
 }
 
-pub fn addOrRemove(comptime set: *Set, comptime item: []const u8) void {
+pub fn addOrRemove(comptime set: *Set, comptime item: anytype) void {
     set.addOrErr(item) catch set.remove(item);
 }
 
 // == Removing items ==
-pub fn remove(comptime set: *Set, comptime item: []const u8) void {
+pub fn remove(comptime set: *Set, comptime item: anytype) void {
     set.map.remove(item);
 }
 
-pub fn removeOrErr(comptime set: *Set, comptime item: []const u8) Map.RemoveError!void {
+pub fn removeOrErr(comptime set: *Set, comptime item: anytype) Map.RemoveError!void {
     try set.map.removeOrErr(item);
 }
 
-pub fn removeOrLeave(comptime set: *Set, comptime item: []const u8) void {
+pub fn removeOrLeave(comptime set: *Set, comptime item: anytype) void {
     set.map.removeOrLeave(item);
 }
 
@@ -130,9 +130,9 @@ pub fn isDisjoint(comptime set1: Set, comptime set2: Set) bool {
 // == Testing ==
 test has {
     comptime {
-        const set = Set.from(.{"item"});
-        try std.testing.expect(set.has("item"));
-        try std.testing.expect(!set.has("not item"));
+        const set = Set.from(.{.item});
+        try std.testing.expect(set.has(.item));
+        try std.testing.expect(!set.has(.not_item));
     }
 }
 
@@ -141,10 +141,10 @@ test size {
         var set = Set{};
         try std.testing.expectEqual(0, set.size());
 
-        set.add("item 1");
+        set.add(.item_1);
         try std.testing.expectEqual(1, set.size());
 
-        set.add("item 2");
+        set.add(.item_2);
         try std.testing.expectEqual(2, set.size());
     }
 }
@@ -152,13 +152,14 @@ test size {
 test add {
     comptime {
         var set = Set{};
-        try std.testing.expect(!set.has("item"));
+        try std.testing.expect(!set.has(.item));
 
-        set.add("item");
-        try std.testing.expect(set.has("item"));
+        set.add(.item_1);
+        try std.testing.expect(set.has(.item_1));
 
-        set.add("item 2");
-        try std.testing.expect(set.has("item"));
+        set.add(.item_2);
+        try std.testing.expect(set.has(.item_1));
+        try std.testing.expect(set.has(.item_2));
     }
 }
 
@@ -166,8 +167,8 @@ test addOrErr {
     comptime {
         var set = Set{};
 
-        const not_err = set.addOrErr("item 1");
-        const yes_err = set.addOrErr("item 1");
+        const not_err = set.addOrErr(.item);
+        const yes_err = set.addOrErr(.item);
 
         try std.testing.expectEqual({}, not_err);
         try std.testing.expectEqual(Map.AddError.KeyAlreadyExists, yes_err);
@@ -178,49 +179,49 @@ test addOrLeave {
     comptime {
         var set = Set{};
 
-        try std.testing.expect(!set.has("item"));
+        try std.testing.expect(!set.has(.item));
 
-        set.addOrLeave("item");
-        try std.testing.expect(set.has("item"));
+        set.addOrLeave(.item);
+        try std.testing.expect(set.has(.item));
 
-        set.addOrLeave("item");
-        try std.testing.expect(set.has("item"));
+        set.addOrLeave(.item);
+        try std.testing.expect(set.has(.item));
     }
 }
 
 test addOrRemove {
     comptime {
         var set = Set{};
-        try std.testing.expect(!set.has("item"));
+        try std.testing.expect(!set.has(.item));
 
-        set.addOrRemove("item");
-        try std.testing.expect(set.has("item"));
+        set.addOrRemove(.item);
+        try std.testing.expect(set.has(.item));
 
-        set.addOrRemove("item");
-        try std.testing.expect(!set.has("item"));
+        set.addOrRemove(.item);
+        try std.testing.expect(!set.has(.item));
 
-        set.addOrRemove("item");
-        try std.testing.expect(set.has("item"));
+        set.addOrRemove(.item);
+        try std.testing.expect(set.has(.item));
     }
 }
 
 test remove {
     comptime {
-        var set = Set.from(.{"item"});
-        try std.testing.expect(set.has("item"));
+        var set = Set.from(.{.item});
+        try std.testing.expect(set.has(.item));
 
-        set.remove("item");
-        try std.testing.expect(!set.has("item"));
+        set.remove(.item);
+        try std.testing.expect(!set.has(.item));
     }
 }
 
 test removeOrErr {
     comptime {
-        var set = Set.from(.{"item"});
-        try std.testing.expect(set.has("item"));
+        var set = Set.from(.{.item});
+        try std.testing.expect(set.has(.item));
 
-        const not_err = set.removeOrErr("item");
-        const yes_err = set.removeOrErr("item");
+        const not_err = set.removeOrErr(.item);
+        const yes_err = set.removeOrErr(.item);
 
         try std.testing.expectEqual({}, not_err);
         try std.testing.expectEqual(Map.RemoveError.KeyDoesNotExist, yes_err);
@@ -229,22 +230,22 @@ test removeOrErr {
 
 test removeOrLeave {
     comptime {
-        var set = Set.from(.{"item"});
-        try std.testing.expect(set.has("item"));
+        var set = Set.from(.{.item});
+        try std.testing.expect(set.has(.item));
 
-        set.removeOrLeave("item");
-        try std.testing.expect(!set.has("item"));
+        set.removeOrLeave(.item);
+        try std.testing.expect(!set.has(.item));
 
-        set.removeOrLeave("item");
-        try std.testing.expect(!set.has("item"));
+        set.removeOrLeave(.item);
+        try std.testing.expect(!set.has(.item));
     }
 }
 
 test isDisjoint {
     comptime {
-        const set1 = Set.from(.{ "a", "b" });
-        const set2 = Set.from(.{ "b", "c" });
-        const set3 = Set.from(.{ "c", "d" });
+        const set1 = Set.from(.{ .a, .b });
+        const set2 = Set.from(.{ .b, .c });
+        const set3 = Set.from(.{ .c, .d });
 
         try std.testing.expect(!set1.isDisjoint(set2));
         try std.testing.expect(set1.isDisjoint(set3));
@@ -254,32 +255,32 @@ test isDisjoint {
 
 test combine {
     comptime {
-        const set1 = Set.from(.{ "a", "b" });
-        const set2 = Set.from(.{ "c", "d" });
+        const set1 = Set.from(.{ .a, .b });
+        const set2 = Set.from(.{ .c, .d });
 
         const set3 = set1.combine(set2);
 
-        try std.testing.expect(set3.has("a"));
-        try std.testing.expect(set3.has("b"));
-        try std.testing.expect(set3.has("c"));
-        try std.testing.expect(set3.has("d"));
+        try std.testing.expect(set3.has(.a));
+        try std.testing.expect(set3.has(.b));
+        try std.testing.expect(set3.has(.c));
+        try std.testing.expect(set3.has(.d));
     }
 }
 
 test combineOrErr {
     comptime {
-        const set1 = Set.from(.{ "a", "b" });
-        const set2 = Set.from(.{ "b", "c" });
-        const set3 = Set.from(.{ "c", "d" });
+        const set1 = Set.from(.{ .a, .b });
+        const set2 = Set.from(.{ .b, .c });
+        const set3 = Set.from(.{ .c, .d });
 
         try std.testing.expectError(Map.AddError.KeyAlreadyExists, set1.combineOrErr(set2));
 
         const set4 = try set1.combineOrErr(set3);
 
-        try std.testing.expect(set4.has("a"));
-        try std.testing.expect(set4.has("b"));
-        try std.testing.expect(set4.has("c"));
-        try std.testing.expect(set4.has("d"));
+        try std.testing.expect(set4.has(.a));
+        try std.testing.expect(set4.has(.b));
+        try std.testing.expect(set4.has(.c));
+        try std.testing.expect(set4.has(.d));
 
         try std.testing.expectError(Map.AddError.KeyAlreadyExists, set2.combineOrErr(set3));
     }
@@ -287,36 +288,36 @@ test combineOrErr {
 
 test combineOrLeave {
     comptime {
-        const set1 = Set.from(.{ "a", "b" });
-        const set2 = Set.from(.{ "b", "c" });
-        const set3 = Set.from(.{ "c", "d" });
+        const set1 = Set.from(.{ .a, .b });
+        const set2 = Set.from(.{ .b, .c });
+        const set3 = Set.from(.{ .c, .d });
 
         const set12 = set1.combineOrLeave(set2);
         const set23 = set2.combineOrLeave(set3);
         const set13 = set1.combineOrLeave(set3);
 
-        try std.testing.expect(set12.has("a"));
-        try std.testing.expect(set12.has("b"));
-        try std.testing.expect(set12.has("c"));
-        try std.testing.expect(!set12.has("d"));
+        try std.testing.expect(set12.has(.a));
+        try std.testing.expect(set12.has(.b));
+        try std.testing.expect(set12.has(.c));
+        try std.testing.expect(!set12.has(.d));
 
-        try std.testing.expect(!set23.has("a"));
-        try std.testing.expect(set23.has("b"));
-        try std.testing.expect(set23.has("c"));
-        try std.testing.expect(set23.has("d"));
+        try std.testing.expect(!set23.has(.a));
+        try std.testing.expect(set23.has(.b));
+        try std.testing.expect(set23.has(.c));
+        try std.testing.expect(set23.has(.d));
 
-        try std.testing.expect(set13.has("a"));
-        try std.testing.expect(set13.has("b"));
-        try std.testing.expect(set13.has("c"));
-        try std.testing.expect(set13.has("d"));
+        try std.testing.expect(set13.has(.a));
+        try std.testing.expect(set13.has(.b));
+        try std.testing.expect(set13.has(.c));
+        try std.testing.expect(set13.has(.d));
     }
 }
 
 test intersection {
     comptime {
-        const set1 = Set.from(.{ "a", "b" });
-        const set2 = Set.from(.{ "b", "c" });
-        const set3 = Set.from(.{ "c", "d" });
+        const set1 = Set.from(.{ .a, .b });
+        const set2 = Set.from(.{ .b, .c });
+        const set3 = Set.from(.{ .c, .d });
 
         const set12 = set1.intersection(set2);
         const set23 = set2.intersection(set3);
@@ -324,24 +325,24 @@ test intersection {
 
         const set123 = set12.intersection(set23);
 
-        try std.testing.expect(!set12.has("a"));
-        try std.testing.expect(set12.has("b"));
-        try std.testing.expect(!set12.has("c"));
-        try std.testing.expect(!set12.has("d"));
+        try std.testing.expect(!set12.has(.a));
+        try std.testing.expect(set12.has(.b));
+        try std.testing.expect(!set12.has(.c));
+        try std.testing.expect(!set12.has(.d));
 
-        try std.testing.expect(!set13.has("a"));
-        try std.testing.expect(!set13.has("b"));
-        try std.testing.expect(!set13.has("c"));
-        try std.testing.expect(!set13.has("d"));
+        try std.testing.expect(!set13.has(.a));
+        try std.testing.expect(!set13.has(.b));
+        try std.testing.expect(!set13.has(.c));
+        try std.testing.expect(!set13.has(.d));
 
-        try std.testing.expect(!set23.has("a"));
-        try std.testing.expect(!set23.has("b"));
-        try std.testing.expect(set23.has("c"));
-        try std.testing.expect(!set23.has("d"));
+        try std.testing.expect(!set23.has(.a));
+        try std.testing.expect(!set23.has(.b));
+        try std.testing.expect(set23.has(.c));
+        try std.testing.expect(!set23.has(.d));
 
-        try std.testing.expect(!set123.has("a"));
-        try std.testing.expect(!set123.has("b"));
-        try std.testing.expect(!set123.has("c"));
-        try std.testing.expect(!set123.has("d"));
+        try std.testing.expect(!set123.has(.a));
+        try std.testing.expect(!set123.has(.b));
+        try std.testing.expect(!set123.has(.c));
+        try std.testing.expect(!set123.has(.d));
     }
 }

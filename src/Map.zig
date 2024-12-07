@@ -69,19 +69,19 @@ pub fn size(comptime map: Map) usize {
 }
 
 // == Accessing items ==
-pub fn has(comptime map: Map, comptime key: []const u8) bool {
-    return @hasField(map.type, key);
+pub fn has(comptime map: Map, comptime key: anytype) bool {
+    return @hasField(map.type, intoString(key));
 }
 
-pub fn Get(comptime map: Map, comptime key: []const u8) type {
+pub fn Get(comptime map: Map, comptime key: anytype) type {
     return if (map.has(key))
-        @TypeOf(@field(map.type{}, key))
+        @TypeOf(@field(map.type{}, intoString(key)))
     else
         @Type(.NoReturn);
 }
 
-pub fn get(comptime map: Map, comptime key: []const u8) ?Get(map, key) {
-    return if (map.has(key)) @field(map.type{}, key) else null;
+pub fn get(comptime map: Map, comptime key: anytype) ?Get(map, key) {
+    return if (map.has(key)) @field(map.type{}, intoString(key)) else null;
 }
 
 // == Adding items ==
@@ -91,7 +91,7 @@ pub const AddError = error{
 
 pub fn addOrErr(
     comptime map: *Map,
-    comptime key: []const u8,
+    comptime key: anytype,
     comptime value: anytype,
 ) AddError!void {
     if (map.has(key))
@@ -101,7 +101,7 @@ pub fn addOrErr(
 
 pub fn addOrLeave(
     comptime map: *Map,
-    comptime key: []const u8,
+    comptime key: anytype,
     comptime value: anytype,
 ) void {
     if (!map.has(key))
@@ -110,7 +110,7 @@ pub fn addOrLeave(
 
 pub fn addOrReplace(
     comptime map: *Map,
-    comptime key: []const u8,
+    comptime key: anytype,
     comptime value: anytype,
 ) void {
     map.replaceOrErr(key, value) catch map.add(key, value);
@@ -118,14 +118,14 @@ pub fn addOrReplace(
 
 pub fn add(
     comptime map: *Map,
-    comptime key: []const u8,
+    comptime key: anytype,
     comptime value: anytype,
 ) void {
     const Value = @TypeOf(value);
     var struct_info = map.info();
     struct_info.fields = map.info().fields ++ &[_]KeyValue{.{
         .alignment = @alignOf(Value),
-        .name = key ++ "\x00",
+        .name = intoString(key) ++ "\x00",
         .default_value = @ptrCast(&value),
         .is_comptime = true,
         .type = Value,
@@ -139,11 +139,11 @@ pub const RemoveError = error{
     KeyDoesNotExist,
 };
 
-pub fn remove(comptime map: *Map, comptime key: []const u8) void {
+pub fn remove(comptime map: *Map, comptime key: anytype) void {
     var struct_info = map.info();
     const new_length = map.size() - 1;
     for (0..new_length) |index| {
-        if (std.mem.eql(u8, struct_info.fields[index].name, key)) {
+        if (std.mem.eql(u8, struct_info.fields[index].name, intoString(key))) {
             struct_info.fields = map.info().fields[0..index] ++ map.info().fields[index + 1 ..];
             break;
         }
@@ -152,30 +152,30 @@ pub fn remove(comptime map: *Map, comptime key: []const u8) void {
     map.type = @Type(.{ .Struct = struct_info });
 }
 
-pub fn removeOrErr(comptime map: *Map, comptime key: []const u8) RemoveError!void {
+pub fn removeOrErr(comptime map: *Map, comptime key: anytype) RemoveError!void {
     if (!map.has(key))
         return RemoveError.KeyDoesNotExist;
     map.remove(key);
 }
 
-pub fn removeOrLeave(comptime map: *Map, comptime key: []const u8) void {
+pub fn removeOrLeave(comptime map: *Map, comptime key: anytype) void {
     if (map.has(key))
         map.remove(key);
 }
 
 // == Popping items ==
-pub fn pop(comptime map: *Map, comptime key: []const u8) Get(map.*, key) {
+pub fn pop(comptime map: *Map, comptime key: anytype) Get(map.*, key) {
     defer map.remove(key);
     return map.get(key).?;
 }
 
-pub fn popOrErr(comptime map: *Map, comptime key: []const u8) RemoveError!Get(map.*, key) {
+pub fn popOrErr(comptime map: *Map, comptime key: anytype) RemoveError!Get(map.*, key) {
     if (!map.has(key))
         return RemoveError.KeyDoesNotExist;
     return map.pop(key);
 }
 
-pub fn popOrLeave(comptime map: *Map, comptime key: []const u8) ?Get(map.*, key) {
+pub fn popOrLeave(comptime map: *Map, comptime key: anytype) ?Get(map.*, key) {
     return if (map.has(key))
         map.pop(key)
     else
@@ -185,7 +185,7 @@ pub fn popOrLeave(comptime map: *Map, comptime key: []const u8) ?Get(map.*, key)
 // == Replacing items ==
 pub fn replace(
     comptime map: *Map,
-    comptime key: []const u8,
+    comptime key: anytype,
     comptime value: anytype,
 ) void {
     map.remove(key);
@@ -194,7 +194,7 @@ pub fn replace(
 
 pub fn replaceOrErr(
     comptime map: *Map,
-    comptime key: []const u8,
+    comptime key: anytype,
     comptime value: anytype,
 ) RemoveError!void {
     if (!map.has(key))
@@ -204,7 +204,7 @@ pub fn replaceOrErr(
 
 pub fn replaceOrLeave(
     comptime map: *Map,
-    comptime key: []const u8,
+    comptime key: anytype,
     comptime value: anytype,
 ) void {
     if (map.has(key))
@@ -299,7 +299,7 @@ pub fn iterate(comptime map: Map) Iterator {
 test add {
     comptime {
         var map = Map{};
-        map.add("key", "value");
+        map.add(.key, "value");
         try std.testing.expectEqualStrings("value", @field(map.type{}, "key"));
     }
 }
@@ -307,8 +307,8 @@ test add {
 test addOrErr {
     comptime {
         var map = Map.from(.{ .key1 = 1 });
-        const add_key1 = map.addOrErr("key1", 2); // this is an error
-        const add_key2 = map.addOrErr("key2", 3); // this isn't
+        const add_key1 = map.addOrErr(.key1, 2); // this is an error
+        const add_key2 = map.addOrErr(.key2, 3); // this isn't
 
         try std.testing.expectError(AddError.KeyAlreadyExists, add_key1);
         try std.testing.expectEqual(void{}, add_key2);
@@ -321,8 +321,8 @@ test addOrErr {
 test addOrLeave {
     comptime {
         var map = Map.from(.{ .key1 = 1 });
-        map.addOrLeave("key1", 2); // does nothing
-        map.addOrLeave("key2", 3);
+        map.addOrLeave(.key1, 2); // does nothing
+        map.addOrLeave(.key2, 3);
 
         try std.testing.expectEqual(1, (map.type{}).key1);
         try std.testing.expectEqual(3, (map.type{}).key2);
@@ -332,8 +332,8 @@ test addOrLeave {
 test addOrReplace {
     comptime {
         var map = Map.from(.{ .key = 1 });
-        map.addOrReplace("key", 2);
-        map.addOrReplace("not_key", 3);
+        map.addOrReplace(.key, 2);
+        map.addOrReplace(.not_key, 3);
 
         try std.testing.expectEqual(2, (map.type{}).key);
         try std.testing.expectEqual(3, (map.type{}).not_key);
@@ -345,7 +345,7 @@ test remove {
         var map = Map.from(.{ .key = 1 });
 
         try std.testing.expect(@hasField(map.type, "key"));
-        map.remove("key");
+        map.remove(.key);
         try std.testing.expect(!@hasField(map.type, "key"));
     }
 }
@@ -357,8 +357,8 @@ test removeOrErr {
         try std.testing.expect(@hasField(map.type, "key"));
         try std.testing.expect(!@hasField(map.type, "not_key"));
 
-        const remove_key = map.removeOrErr("key");
-        const remove_not_key = map.removeOrErr("not_key");
+        const remove_key = map.removeOrErr(.key);
+        const remove_not_key = map.removeOrErr(.not_key);
 
         try std.testing.expect(!@hasField(map.type, "key"));
         try std.testing.expect(!@hasField(map.type, "not_key"));
@@ -375,8 +375,8 @@ test removeOrLeave {
         try std.testing.expect(@hasField(map.type, "key"));
         try std.testing.expect(!@hasField(map.type, "not_key"));
 
-        map.removeOrLeave("key");
-        map.removeOrLeave("not_key");
+        map.removeOrLeave(.key);
+        map.removeOrLeave(.not_key);
 
         try std.testing.expect(!@hasField(map.type, "key"));
         try std.testing.expect(!@hasField(map.type, "not_key"));
@@ -388,7 +388,7 @@ test replace {
         var map = Map.from(.{ .key = 1 });
 
         try std.testing.expectEqual(1, (map.type{}).key);
-        map.replace("key", "not even a `comptime_int`");
+        map.replace(.key, "not even a `comptime_int`");
         try std.testing.expectEqualStrings("not even a `comptime_int`", (map.type{}).key);
     }
 }
@@ -400,8 +400,8 @@ test replaceOrErr {
         try std.testing.expectEqual(1, (map.type{}).key);
         try std.testing.expect(!@hasField(map.type, "not_key"));
 
-        const replace_key = map.replaceOrErr("key", 2);
-        const replace_not_key = map.replaceOrErr("not_key", 2);
+        const replace_key = map.replaceOrErr(.key, 2);
+        const replace_not_key = map.replaceOrErr(.not_key, 2);
 
         try std.testing.expectEqual(2, (map.type{}).key);
         try std.testing.expect(!@hasField(map.type, "not_key"));
@@ -418,8 +418,8 @@ test replaceOrLeave {
         try std.testing.expectEqual(1, (map.type{}).key);
         try std.testing.expect(!@hasField(map.type, "not_key"));
 
-        map.replaceOrLeave("key", 2);
-        map.replaceOrLeave("not_key", 2);
+        map.replaceOrLeave(.key, 2);
+        map.replaceOrLeave(.not_key, 2);
 
         try std.testing.expectEqual(2, (map.type{}).key);
         try std.testing.expect(!@hasField(map.type, "not_key"));
@@ -429,53 +429,53 @@ test replaceOrLeave {
 test has {
     comptime {
         var map = Map.from(.{ .key = 1 });
-        try std.testing.expect(map.has("key"));
-        try std.testing.expect(!map.has("not_key"));
+        try std.testing.expect(map.has(.key));
+        try std.testing.expect(!map.has(.not_key));
     }
 }
 
 test Get {
     comptime {
         const map = Map.from(.{ .key = 1 });
-        try std.testing.expectEqual(comptime_int, Map.Get(map, "key"));
-        try std.testing.expectEqual(noreturn, Map.Get(map, "not_key"));
+        try std.testing.expectEqual(comptime_int, Map.Get(map, .key));
+        try std.testing.expectEqual(noreturn, Map.Get(map, .not_key));
     }
 }
 
 test get {
     comptime {
         const map = Map.from(.{ .key = 1 });
-        try std.testing.expectEqual(1, map.get("key"));
-        try std.testing.expectEqual(null, map.get("not_key"));
+        try std.testing.expectEqual(1, map.get(.key));
+        try std.testing.expectEqual(null, map.get(.not_key));
     }
 }
 
 test pop {
     comptime {
         var map = Map.from(.{ .key = 1 });
-        try std.testing.expectEqual(1, map.pop("key"));
-        try std.testing.expect(!map.has("key"));
+        try std.testing.expectEqual(1, map.pop(.key));
+        try std.testing.expect(!map.has(.key));
     }
 }
 
 test popOrErr {
     comptime {
         var map = Map.from(.{ .key = 1 });
-        try std.testing.expectEqual(1, map.popOrErr("key"));
-        try std.testing.expectError(RemoveError.KeyDoesNotExist, map.popOrErr("key"));
+        try std.testing.expectEqual(1, map.popOrErr(.key));
+        try std.testing.expectError(RemoveError.KeyDoesNotExist, map.popOrErr(.key));
     }
 }
 
 test popOrLeave {
     comptime {
         var map = Map.from(.{ .key = 1 });
-        try std.testing.expect(map.has("key"));
+        try std.testing.expect(map.has(.key));
 
-        const pop1 = map.popOrLeave("key");
-        try std.testing.expect(!map.has("key"));
+        const pop1 = map.popOrLeave(.key);
+        try std.testing.expect(!map.has(.key));
 
-        const pop2 = map.popOrLeave("key");
-        try std.testing.expect(!map.has("key"));
+        const pop2 = map.popOrLeave(.key);
+        try std.testing.expect(!map.has(.key));
 
         try std.testing.expectEqual(1, pop1);
         try std.testing.expectEqual(null, pop2);
@@ -590,6 +590,24 @@ test iterateValues {
         try std.testing.expectEqual(null, iterator.peek());
         try std.testing.expectEqual(null, iterator.next());
     }
+}
+
+pub fn intoString(comptime any: anytype) []const u8 {
+    const Any = @TypeOf(any);
+    switch (Any) {
+        []const u8, []u8, [:0]const u8, [:0]u8 => return any,
+        @TypeOf(.enum_literal) => return @tagName(any),
+        else => if (@typeInfo(Any) == .Pointer) {
+            const pointer_info = @typeInfo(Any).Pointer;
+            if (pointer_info.size == .One) {
+                const child_info = @typeInfo(pointer_info.child);
+                if (child_info == .Array and child_info.Array.child == u8)
+                    return any;
+            }
+        },
+    }
+
+    root.compileError("Can't convert `{s}` into a string!", .{@typeName(Any)});
 }
 
 fn info(comptime map: Map) std.builtin.Type.Struct {
