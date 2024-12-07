@@ -164,18 +164,18 @@ pub fn removeOrLeave(comptime map: *Map, comptime key: []const u8) void {
 }
 
 // == Popping items ==
-pub fn pop(comptime map: *Map, comptime key: []const u8) Get(map, key) {
+pub fn pop(comptime map: *Map, comptime key: []const u8) Get(map.*, key) {
     defer map.remove(key);
     return map.get(key).?;
 }
 
-pub fn popOrErr(comptime map: *Map, comptime key: []const u8) RemoveError!Get(map, key) {
+pub fn popOrErr(comptime map: *Map, comptime key: []const u8) RemoveError!Get(map.*, key) {
     if (!map.has(key))
         return RemoveError.KeyDoesNotExist;
     return map.pop(key);
 }
 
-pub fn popOrLeave(comptime map: *Map, comptime key: []const u8) ?Get(map, key) {
+pub fn popOrLeave(comptime map: *Map, comptime key: []const u8) ?Get(map.*, key) {
     return if (map.has(key))
         map.pop(key)
     else
@@ -443,6 +443,35 @@ test get {
         const map = Map.from(.{ .key = 1 });
         try std.testing.expectEqual(1, map.get("key"));
         try std.testing.expectEqual(null, map.get("not_key"));
+    }
+}
+
+test pop {
+    comptime {
+        const map = Map.from(.{ .key = 1 });
+        try std.testing.expectEqual(1, map.pop("key"));
+        try std.testing.expect(!map.has("key"));
+    }
+}
+
+test popOrErr {
+    comptime {
+        const map = Map.from(.{ .key = 1 });
+        try std.testing.expectEqual(1, map.popOrErr("key"));
+        try std.testing.expectError(RemoveError.KeyDoesNotExist, map.popOrErr("key"));
+    }
+}
+
+test popOrLeave {
+    comptime {
+        var map = Map.from(.{ .key = 1 });
+        try std.testing.expect(map.has("key"));
+
+        map.popOrLeave("key");
+        try std.testing.expect(!map.has("key"));
+
+        map.popOrLeave("key");
+        try std.testing.expect(!map.has("key"));
     }
 }
 
