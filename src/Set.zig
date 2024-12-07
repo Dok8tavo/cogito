@@ -23,8 +23,18 @@
 
 map: Map = .{},
 
+const std = @import("std");
+
 const Map = @import("Map.zig");
 const Set = @This();
+
+pub fn from(comptime items: anytype) Set {
+    comptime {
+        var set = Set{};
+        for (items) |item| set.add(item);
+        return set;
+    }
+}
 
 pub fn has(comptime set: Set, comptime item: []const u8) bool {
     return set.map.has(item);
@@ -102,4 +112,12 @@ pub fn isDisjoint(comptime set1: Set, comptime set2: Set) bool {
         if (set2.has(field.name))
             break false;
     } else true;
+}
+
+test has {
+    comptime {
+        const set = Set.from(.{"key"});
+        try std.testing.expect(set.has("key"));
+        try std.testing.expect(!set.has("not_key"));
+    }
 }
