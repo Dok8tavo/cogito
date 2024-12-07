@@ -214,6 +214,19 @@ test removeOrErr {
         const yes_err = set.removeOrErr("item");
 
         try std.testing.expectEqual({}, not_err);
-        try std.testing.expectEqual(Map.RemoveError.KeyNotFound, yes_err);
+        try std.testing.expectEqual(Map.RemoveError.KeyDoesNotExist, yes_err);
+    }
+}
+
+test removeOrLeave {
+    comptime {
+        var set = Set.from(.{"item"});
+        try std.testing.expect(set.has("item"));
+
+        set.removeOrLeave("item");
+        try std.testing.expect(!set.has("item"));
+
+        set.removeOrLeave("item");
+        try std.testing.expect(!set.has("item"));
     }
 }

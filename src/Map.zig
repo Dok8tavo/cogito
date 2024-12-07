@@ -135,7 +135,7 @@ pub fn add(
 }
 
 // == Removing items ==
-const RemoveError = error{
+pub const RemoveError = error{
     KeyDoesNotExist,
 };
 
