@@ -263,3 +263,22 @@ test combination {
         try std.testing.expect(set3.has("d"));
     }
 }
+
+test combinationOrErr {
+    comptime {
+        const set1 = Set.from(.{ "a", "b" });
+        const set2 = Set.from(.{ "b", "c" });
+        const set3 = Set.from(.{ "c", "d" });
+
+        try std.testing.expectError(Map.AddError.KeyAlreadyExists, set1.combinationOrErr(set2));
+
+        const set4 = try set1.combinationOrErr(set3);
+
+        try std.testing.expect(set4.has("a"));
+        try std.testing.expect(set4.has("b"));
+        try std.testing.expect(set4.has("c"));
+        try std.testing.expect(set4.has("d"));
+
+        try std.testing.expectError(Map.AddError.KeyAlreadyExists, set2.combinationOrErr(set3));
+    }
+}
