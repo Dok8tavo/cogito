@@ -109,9 +109,7 @@ pub fn addOrReplace(
     comptime key: []const u8,
     comptime value: anytype,
 ) void {
-    if (map.has(key))
-        map.remove(key);
-    map.add(key, value);
+    map.replaceOrErr(key, value) catch map.add(key, value);
 }
 
 pub fn add(
@@ -249,6 +247,17 @@ test addOrLeave {
 
         try std.testing.expectEqual(1, (map.type{}).key1);
         try std.testing.expectEqual(3, (map.type{}).key2);
+    }
+}
+
+test addOrReplace {
+    comptime {
+        var map = Map.from(.{ .key = 1 });
+        map.addOrReplace("key", 2);
+        map.addOrReplace("not_key", 3);
+
+        try std.testing.expectEqual(2, (map.type{}).key);
+        try std.testing.expectEqual(3, (map.type{}).not_key);
     }
 }
 
