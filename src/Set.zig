@@ -112,10 +112,12 @@ pub fn intersection(comptime set1: Set, comptime set2: Set) Set {
 }
 
 pub fn isDisjoint(comptime set1: Set, comptime set2: Set) bool {
-    comptime return for (set1.map.info().fields) |field| {
-        if (set2.has(field.name))
-            break false;
-    } else true;
+    comptime {
+        var iterator = set1.map.iterateKeys();
+        return while (iterator.next()) |key| {
+            if (set2.has(key)) break false;
+        } else true;
+    }
 }
 
 // == Testing ==
@@ -233,7 +235,6 @@ test removeOrLeave {
 
 test isDisjoint {
     comptime {
-        if (true) return;
         const set1 = Set.from(.{ "a", "b" });
         const set2 = Set.from(.{ "b", "c" });
         const set3 = Set.from(.{ "c", "d" });

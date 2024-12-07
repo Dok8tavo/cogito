@@ -73,14 +73,14 @@ pub fn has(comptime map: Map, comptime key: []const u8) bool {
     return @hasField(map.type, key);
 }
 
-pub fn Get(comptime map: Map, comptime key: [:0]const u8) type {
+pub fn Get(comptime map: Map, comptime key: []const u8) type {
     return if (map.has(key))
         @TypeOf(@field(map.type{}, key))
     else
         @Type(.NoReturn);
 }
 
-pub fn get(comptime map: Map, comptime key: [:0]const u8) ?Get(map, key) {
+pub fn get(comptime map: Map, comptime key: []const u8) ?Get(map, key) {
     return if (map.has(key)) @field(map.type{}, key) else null;
 }
 
@@ -448,7 +448,7 @@ test get {
 
 test pop {
     comptime {
-        const map = Map.from(.{ .key = 1 });
+        var map = Map.from(.{ .key = 1 });
         try std.testing.expectEqual(1, map.pop("key"));
         try std.testing.expect(!map.has("key"));
     }
@@ -456,7 +456,7 @@ test pop {
 
 test popOrErr {
     comptime {
-        const map = Map.from(.{ .key = 1 });
+        var map = Map.from(.{ .key = 1 });
         try std.testing.expectEqual(1, map.popOrErr("key"));
         try std.testing.expectError(RemoveError.KeyDoesNotExist, map.popOrErr("key"));
     }
@@ -467,11 +467,14 @@ test popOrLeave {
         var map = Map.from(.{ .key = 1 });
         try std.testing.expect(map.has("key"));
 
-        map.popOrLeave("key");
+        const pop1 = map.popOrLeave("key");
         try std.testing.expect(!map.has("key"));
 
-        map.popOrLeave("key");
+        const pop2 = map.popOrLeave("key");
         try std.testing.expect(!map.has("key"));
+
+        try std.testing.expectEqual(1, pop1);
+        try std.testing.expectEqual(null, pop2);
     }
 }
 
