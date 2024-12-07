@@ -282,3 +282,30 @@ test combineOrErr {
         try std.testing.expectError(Map.AddError.KeyAlreadyExists, set2.combineOrErr(set3));
     }
 }
+
+test combineOrLeave {
+    comptime {
+        const set1 = Set.from(.{ "a", "b" });
+        const set2 = Set.from(.{ "b", "c" });
+        const set3 = Set.from(.{ "c", "d" });
+
+        const set12 = set1.combineOrLeave(set2);
+        const set23 = set2.combineOrLeave(set3);
+        const set13 = set1.combineOrLeave(set3);
+
+        try std.testing.expect(set12.has("a"));
+        try std.testing.expect(set12.has("b"));
+        try std.testing.expect(set12.has("c"));
+        try std.testing.expect(!set12.has("d"));
+
+        try std.testing.expect(!set23.has("a"));
+        try std.testing.expect(set23.has("b"));
+        try std.testing.expect(set23.has("c"));
+        try std.testing.expect(set23.has("d"));
+
+        try std.testing.expect(set13.has("a"));
+        try std.testing.expect(set13.has("b"));
+        try std.testing.expect(set13.has("c"));
+        try std.testing.expect(set13.has("d"));
+    }
+}
