@@ -75,7 +75,7 @@ pub fn removeOrLeave(comptime set: *Set, comptime item: []const u8) void {
 }
 
 // == Combining sets ==
-pub fn combination(comptime set1: Set, comptime set2: Set) Set {
+pub fn combine(comptime set1: Set, comptime set2: Set) Set {
     comptime {
         var combine_set = set1;
         var iterator = set2.map.iterateKeys();
@@ -87,15 +87,15 @@ pub fn combination(comptime set1: Set, comptime set2: Set) Set {
     }
 }
 
-pub fn combinationOrErr(comptime set1: Set, comptime set2: Set) Map.AddError!Set {
+pub fn combineOrErr(comptime set1: Set, comptime set2: Set) Map.AddError!Set {
     comptime {
         if (!set1.isDisjoint(set2))
             return Map.AddError.KeyAlreadyExists;
-        return set1.combination(set2);
+        return set1.combine(set2);
     }
 }
 
-pub fn combinationOrLeave(comptime set1: Set, comptime set2: Set) Set {
+pub fn combineOrLeave(comptime set1: Set, comptime set2: Set) Set {
     comptime {
         var combine_set = set1;
         var iterator = set2.map.iterateKeys();
@@ -250,12 +250,12 @@ test isDisjoint {
     }
 }
 
-test combination {
+test combine {
     comptime {
         const set1 = Set.from(.{ "a", "b" });
         const set2 = Set.from(.{ "c", "d" });
 
-        const set3 = set1.combination(set2);
+        const set3 = set1.combine(set2);
 
         try std.testing.expect(set3.has("a"));
         try std.testing.expect(set3.has("b"));
@@ -264,21 +264,21 @@ test combination {
     }
 }
 
-test combinationOrErr {
+test combineOrErr {
     comptime {
         const set1 = Set.from(.{ "a", "b" });
         const set2 = Set.from(.{ "b", "c" });
         const set3 = Set.from(.{ "c", "d" });
 
-        try std.testing.expectError(Map.AddError.KeyAlreadyExists, set1.combinationOrErr(set2));
+        try std.testing.expectError(Map.AddError.KeyAlreadyExists, set1.combineOrErr(set2));
 
-        const set4 = try set1.combinationOrErr(set3);
+        const set4 = try set1.combineOrErr(set3);
 
         try std.testing.expect(set4.has("a"));
         try std.testing.expect(set4.has("b"));
         try std.testing.expect(set4.has("c"));
         try std.testing.expect(set4.has("d"));
 
-        try std.testing.expectError(Map.AddError.KeyAlreadyExists, set2.combinationOrErr(set3));
+        try std.testing.expectError(Map.AddError.KeyAlreadyExists, set2.combineOrErr(set3));
     }
 }
