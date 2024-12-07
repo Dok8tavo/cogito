@@ -253,7 +253,7 @@ pub const ValueIterator = struct {
             iterator.map.get(iterator.map.info().fields[iterator.index].name);
     }
 
-    pub fn next(comptime iterator: *ValueIterator) ?Peek(iterator) {
+    pub fn next(comptime iterator: *ValueIterator) ?Peek(iterator.*) {
         return if (iterator.peek()) |value| {
             iterator.index += 1;
             return value;
@@ -516,6 +516,76 @@ test iterate {
 
         try std.testing.expectEqualStrings("key2", next2[0]);
         try std.testing.expectEqual(2, next2[1]);
+
+        try std.testing.expectEqual(null, iterator.peek());
+        try std.testing.expectEqual(null, iterator.next());
+    }
+}
+
+test iterateKeys {
+    comptime {
+        const map = Map.from(.{ .key1 = 1, .key2 = 2 });
+        var iterator = map.iterateKeys();
+
+        const peek1 = iterator.peek() orelse
+            return error.UnexpectedNull;
+
+        try std.testing.expectEqualStrings("key1", peek1);
+
+        const peek2 = iterator.peek() orelse
+            return error.UnexpectedNull;
+
+        try std.testing.expectEqualStrings("key1", peek2);
+
+        const next1 = iterator.next() orelse
+            return error.UnexpectedNull;
+
+        try std.testing.expectEqualStrings("key1", next1);
+
+        const peek3 = iterator.peek() orelse
+            return error.UnexpectedNull;
+
+        try std.testing.expectEqualStrings("key2", peek3);
+
+        const next2 = iterator.next() orelse
+            return error.UnexpectedNull;
+
+        try std.testing.expectEqualStrings("key2", next2);
+
+        try std.testing.expectEqual(null, iterator.peek());
+        try std.testing.expectEqual(null, iterator.next());
+    }
+}
+
+test iterateValues {
+    comptime {
+        const map = Map.from(.{ .key1 = 1, .key2 = 2 });
+        var iterator = map.iterateValues();
+
+        const peek1 = iterator.peek() orelse
+            return error.UnexpectedNull;
+
+        try std.testing.expectEqual(1, peek1);
+
+        const peek2 = iterator.peek() orelse
+            return error.UnexpectedNull;
+
+        try std.testing.expectEqual(1, peek2);
+
+        const next1 = iterator.next() orelse
+            return error.UnexpectedNull;
+
+        try std.testing.expectEqual(1, next1);
+
+        const peek3 = iterator.peek() orelse
+            return error.UnexpectedNull;
+
+        try std.testing.expectEqual(2, peek3);
+
+        const next2 = iterator.next() orelse
+            return error.UnexpectedNull;
+
+        try std.testing.expectEqual(2, next2);
 
         try std.testing.expectEqual(null, iterator.peek());
         try std.testing.expectEqual(null, iterator.next());
