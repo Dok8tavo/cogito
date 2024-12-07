@@ -35,33 +35,35 @@ const KeyValueInfo = std.builtin.Type.StructField;
 const Map = @This();
 
 pub fn from(comptime kv_struct: anytype) Map {
-    const KVStruct = @TypeOf(kv_struct);
-    const kv_info = @typeInfo(KVStruct);
+    comptime {
+        const KVStruct = @TypeOf(kv_struct);
+        const kv_info = @typeInfo(KVStruct);
 
-    var kv_struct_info = if (kv_info == .Struct) kv_info.Struct else root.compileError(
-        "A map must be made from a `.Struct`, not a `.{s}` like `{s}`!",
-        .{ @tagName(kv_info), @typeName(KVStruct) },
-    );
+        var kv_struct_info = if (kv_info == .Struct) kv_info.Struct else root.compileError(
+            "A map must be made from a `.Struct`, not a `.{s}` like `{s}`!",
+            .{ @tagName(kv_info), @typeName(KVStruct) },
+        );
 
-    if (kv_struct_info.is_tuple) root.compileError(
-        "A map must be made from a struct, not a tuple like `{s}`!",
-        .{@typeName(KVStruct)},
-    );
+        if (kv_struct_info.is_tuple) root.compileError(
+            "A map must be made from a struct, not a tuple like `{s}`!",
+            .{@typeName(KVStruct)},
+        );
 
-    var fields: []const KeyValueInfo = &.{};
-    for (kv_struct_info.fields) |field| {
-        fields = fields ++ &[_]KeyValueInfo{.{
-            .alignment = field.alignment,
-            .default_value = @ptrCast(&@field(kv_struct, field.name)),
-            .is_comptime = true,
-            .name = field.name,
-            .type = field.type,
-        }};
+        var fields: []const KeyValueInfo = &.{};
+        for (kv_struct_info.fields) |field| {
+            fields = fields ++ &[_]KeyValueInfo{.{
+                .alignment = field.alignment,
+                .default_value = @ptrCast(&@field(kv_struct, field.name)),
+                .is_comptime = true,
+                .name = field.name,
+                .type = field.type,
+            }};
+        }
+
+        kv_struct_info.fields = fields;
+
+        return Map{ .inner = @Type(kv_info) };
     }
-
-    kv_struct_info.fields = fields;
-
-    return Map{ .inner = @Type(kv_info) };
 }
 
 pub fn size(comptime map: Map) usize {

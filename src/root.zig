@@ -23,6 +23,7 @@
 
 const std = @import("std");
 
+pub const List = @import("List.zig");
 pub const Map = @import("Map.zig");
 pub const Set = @import("Set.zig");
 
@@ -31,6 +32,7 @@ pub fn compileError(comptime fmt: []const u8, comptime args: anytype) noreturn {
 }
 
 test {
+    _ = List;
     _ = Map;
     _ = Set;
 }
