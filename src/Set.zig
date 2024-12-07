@@ -57,6 +57,10 @@ pub fn addOrLeave(comptime set: *Set, comptime item: []const u8) void {
     set.map.addOrLeave(item, {});
 }
 
+pub fn addOrRemove(comptime set: *Set, comptime item: []const u8) void {
+    set.addOrErr(item) catch set.remove(item);
+}
+
 // == Removing items ==
 pub fn remove(comptime set: *Set, comptime item: []const u8) void {
     set.map.remove(item);
@@ -171,6 +175,22 @@ test addOrLeave {
         try std.testing.expect(set.has("item"));
 
         set.addOrLeave("item");
+        try std.testing.expect(set.has("item"));
+    }
+}
+
+test addOrRemove {
+    comptime {
+        var set = Set{};
+        try std.testing.expect(!set.has("item"));
+
+        set.addOrRemove("item");
+        try std.testing.expect(set.has("item"));
+
+        set.addOrRemove("item");
+        try std.testing.expect(!set.has("item"));
+
+        set.addOrRemove("item");
         try std.testing.expect(set.has("item"));
     }
 }
