@@ -63,3 +63,67 @@ pub fn from(tuple: anytype) List {
 
     return List{ .inner = @Type(tuple_info) };
 }
+
+pub fn size(comptime list: List) usize {
+    comptime return list.info().fields.len;
+}
+
+// == Accessing items ==
+pub fn Get(comptime list: List, comptime index: usize) type {
+    return if (index < list.size()) list.info().fields[index].type else @Type(.NoReturn);
+}
+
+pub fn get(comptime list: List, comptime index: usize) ?Get(list, index) {
+    return if (index < list.size()) @field(list.inner{}, list.info().fields[index].name) else null;
+}
+
+// == Inserting items ==
+pub fn insert(comptime list: *List, comptime item: anytype, comptime index: usize) void {
+    comptime {
+        var struct_info = list.info();
+
+        struct_info.fields = struct_info.fields[0..index] ++ &[_]ItemInfo{.{
+            .alignment = @alignOf(@TypeOf(item)),
+            .default_value = @ptrCast(&item),
+            .is_comptime = true,
+            .name = std.fmt.comptimePrint("{}", .{index}),
+            .type = @TypeOf(item),
+        }};
+
+        if (index != list.info().fields.len)
+            struct_info.fields = struct_info.fields[0..index] ++ list.info().fields[index..];
+
+        list.* = List{ .inner = @Type(.{ .Struct = struct_info }) };
+    }
+}
+
+test insert {
+    comptime {
+        var list = List{};
+        try std.testing.expect(!@hasField(list.inner, "0"));
+
+        list.insert("Hello world!", 0);
+
+        try std.testing.expect(@hasField(list.inner, "0"));
+        try std.testing.expectEqualStrings(
+            "Hello world!",
+            @field(list.inner{}, "0"),
+        );
+    }
+}
+
+test get {
+    comptime {
+        const list = List.from(.{ 2, 3, 5, 7 });
+
+        try std.testing.expectEqual(2, list.get(0));
+        try std.testing.expectEqual(3, list.get(1));
+        try std.testing.expectEqual(5, list.get(2));
+        try std.testing.expectEqual(7, list.get(3));
+        try std.testing.expectEqual(null, list.get(4));
+    }
+}
+
+fn info(comptime list: List) std.builtin.Type.Struct {
+    comptime return @typeInfo(list.inner).Struct;
+}
