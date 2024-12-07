@@ -34,34 +34,36 @@ const std = @import("std");
 const List = @This();
 const ItemInfo = std.builtin.Type.StructField;
 
-pub fn from(tuple: anytype) List {
-    const Tuple = @TypeOf(tuple);
-    const tuple_info = @typeInfo(Tuple);
+pub fn from(comptime tuple: anytype) List {
+    comptime {
+        const Tuple = @TypeOf(tuple);
+        const tuple_info = @typeInfo(Tuple);
 
-    var tuple_struct_info = if (tuple_info == .Struct) tuple_info.Struct else root.compileError(
-        "A list must be made from a `.Struct`, not a `.{s}` like `{s}`!",
-        .{ @tagName(tuple_info), @typeName(Tuple) },
-    );
+        var tuple_struct_info = if (tuple_info == .Struct) tuple_info.Struct else root.compileError(
+            "A list must be made from a `.Struct`, not a `.{s}` like `{s}`!",
+            .{ @tagName(tuple_info), @typeName(Tuple) },
+        );
 
-    if (!tuple_struct_info.is_tuple) root.compileError(
-        "A list must be made from a tuple, not a struct like `{s}`!",
-        .{@typeName(Tuple)},
-    );
+        if (!tuple_struct_info.is_tuple) root.compileError(
+            "A list must be made from a tuple, not a struct like `{s}`!",
+            .{@typeName(Tuple)},
+        );
 
-    var fields: []const ItemInfo = &.{};
-    for (tuple_struct_info.fields) |field| {
-        fields = fields ++ &[_]ItemInfo{.{
-            .alignment = field.alignment,
-            .default_value = @ptrCast(&@field(tuple, field.name)),
-            .is_comptime = true,
-            .name = field.name,
-            .type = field.type,
-        }};
+        var fields: []const ItemInfo = &.{};
+        for (tuple_struct_info.fields) |field| {
+            fields = fields ++ &[_]ItemInfo{.{
+                .alignment = field.alignment,
+                .default_value = @ptrCast(&@field(tuple, field.name)),
+                .is_comptime = true,
+                .name = field.name,
+                .type = field.type,
+            }};
+        }
+
+        tuple_struct_info.fields = fields;
+
+        return List{ .inner = @Type(tuple_info) };
     }
-
-    tuple_struct_info.fields = fields;
-
-    return List{ .inner = @Type(tuple_info) };
 }
 
 pub fn size(comptime list: List) usize {
