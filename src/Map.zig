@@ -36,20 +36,20 @@ const Map = @This();
 
 pub fn from(comptime kv_struct: anytype) Map {
     const KVStruct = @TypeOf(kv_struct);
-    var kv_info = @typeInfo(KVStruct);
+    const kv_info = @typeInfo(KVStruct);
 
-    if (kv_info != .Struct) root.compileError(
+    var kv_struct_info = if (kv_info == .Struct) kv_info.Struct else root.compileError(
         "A map must be made from a `.Struct`, not a `.{s}` like `{s}`!",
         .{ @tagName(kv_info), @typeName(KVStruct) },
     );
 
-    if (kv_info.Struct.is_tuple) root.compileError(
+    if (kv_struct_info.is_tuple) root.compileError(
         "A map must be made from a struct, not a tuple like `{s}`!",
         .{@typeName(KVStruct)},
     );
 
     var fields: []const KeyValue = &.{};
-    for (kv_info.Struct.fields) |field| {
+    for (kv_struct_info.fields) |field| {
         fields = fields ++ &[_]KeyValue{.{
             .alignment = field.alignment,
             .default_value = @ptrCast(&@field(kv_struct, field.name)),
@@ -59,7 +59,7 @@ pub fn from(comptime kv_struct: anytype) Map {
         }};
     }
 
-    kv_info.Struct.fields = fields;
+    kv_struct_info.fields = fields;
 
     return Map{ .type = @Type(kv_info) };
 }
@@ -137,7 +137,7 @@ const RemoveError = error{
 
 pub fn remove(comptime map: *Map, comptime key: []const u8) void {
     var struct_info = map.info();
-    const new_length = map.length() - 1;
+    const new_length = map.size() - 1;
     for (0..new_length) |index| {
         if (std.mem.eql(u8, struct_info.fields[index].name, key)) {
             struct_info.fields = map.info().fields[0..index] ++ map.info().fields[index + 1 ..];
@@ -208,7 +208,7 @@ pub fn replaceOrLeave(
 }
 
 // == inner functions ==
-fn length(comptime map: Map) usize {
+fn size(comptime map: Map) usize {
     return map.info().fields.len;
 }
 
