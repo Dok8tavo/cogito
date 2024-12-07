@@ -135,3 +135,42 @@ test size {
         try std.testing.expectEqual(2, set.size());
     }
 }
+
+test add {
+    comptime {
+        var set = Set{};
+        try std.testing.expect(!set.has("item"));
+
+        set.add("item");
+        try std.testing.expect(set.has("item"));
+
+        set.add("item 2");
+        try std.testing.expect(set.has("item"));
+    }
+}
+
+test addOrErr {
+    comptime {
+        var set = Set{};
+
+        const not_err = set.addOrErr("item 1");
+        const yes_err = set.addOrErr("item 1");
+
+        try std.testing.expectEqual({}, not_err);
+        try std.testing.expectEqual(Map.AddError.KeyAlreadyExists, yes_err);
+    }
+}
+
+test addOrLeave {
+    comptime {
+        var set = Set{};
+
+        try std.testing.expect(!set.has("item"));
+
+        set.addOrLeave("item");
+        try std.testing.expect(set.has("item"));
+
+        set.addOrLeave("item");
+        try std.testing.expect(set.has("item"));
+    }
+}
