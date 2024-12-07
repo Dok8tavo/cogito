@@ -109,10 +109,12 @@ pub fn combineOrLeave(comptime set1: Set, comptime set2: Set) Set {
 pub fn intersection(comptime set1: Set, comptime set2: Set) Set {
     comptime {
         var intersection_set = Set{};
+        var iterator = set1.map.iterateKeys();
 
-        for (set1.map.info().fields) |field|
-            if (set2.has(field.name))
-                intersection_set.add(field.name);
+        while (iterator.next()) |key|
+            if (set2.has(key))
+                intersection_set.add(key);
+        return intersection_set;
     }
 }
 
@@ -307,5 +309,39 @@ test combineOrLeave {
         try std.testing.expect(set13.has("b"));
         try std.testing.expect(set13.has("c"));
         try std.testing.expect(set13.has("d"));
+    }
+}
+
+test intersection {
+    comptime {
+        const set1 = Set.from(.{ "a", "b" });
+        const set2 = Set.from(.{ "b", "c" });
+        const set3 = Set.from(.{ "c", "d" });
+
+        const set12 = set1.intersection(set2);
+        const set23 = set2.intersection(set3);
+        const set13 = set1.intersection(set3);
+
+        const set123 = set12.intersection(set23);
+
+        try std.testing.expect(!set12.has("a"));
+        try std.testing.expect(set12.has("b"));
+        try std.testing.expect(!set12.has("c"));
+        try std.testing.expect(!set12.has("d"));
+
+        try std.testing.expect(!set13.has("a"));
+        try std.testing.expect(!set13.has("b"));
+        try std.testing.expect(!set13.has("c"));
+        try std.testing.expect(!set13.has("d"));
+
+        try std.testing.expect(!set23.has("a"));
+        try std.testing.expect(!set23.has("b"));
+        try std.testing.expect(set23.has("c"));
+        try std.testing.expect(!set23.has("d"));
+
+        try std.testing.expect(!set123.has("a"));
+        try std.testing.expect(!set123.has("b"));
+        try std.testing.expect(!set123.has("c"));
+        try std.testing.expect(!set123.has("d"));
     }
 }
