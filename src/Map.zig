@@ -161,6 +161,25 @@ pub fn removeOrLeave(comptime map: *Map, comptime key: []const u8) void {
         map.remove(key);
 }
 
+// == Popping items ==
+pub fn pop(comptime map: *Map, comptime key: []const u8) Get(map, key) {
+    defer map.remove(key);
+    return map.get(key).?;
+}
+
+pub fn popOrErr(comptime map: *Map, comptime key: []const u8) RemoveError!Get(map, key) {
+    if (!map.has(key))
+        return RemoveError.KeyDoesNotExist;
+    return map.pop(key);
+}
+
+pub fn popOrLeave(comptime map: *Map, comptime key: []const u8) ?Get(map, key) {
+    return if (map.has(key))
+        map.pop(key)
+    else
+        null;
+}
+
 // == Replacing items ==
 pub fn replace(
     comptime map: *Map,
