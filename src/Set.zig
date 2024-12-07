@@ -78,9 +78,12 @@ pub fn removeOrLeave(comptime set: *Set, comptime item: []const u8) void {
 pub fn combination(comptime set1: Set, comptime set2: Set) Set {
     comptime {
         var combine_set = set1;
+        var iterator = set2.map.iterateKeys();
 
-        for (set2.map.info().fields) |field|
-            combine_set.add(field.name);
+        while (iterator.next()) |key|
+            combine_set.add(key);
+
+        return combine_set;
     }
 }
 
@@ -95,9 +98,11 @@ pub fn combinationOrErr(comptime set1: Set, comptime set2: Set) Map.AddError!Set
 pub fn combinationOrLeave(comptime set1: Set, comptime set2: Set) Set {
     comptime {
         var combine_set = set1;
+        var iterator = set2.map.iterateKeys();
 
-        for (set2.map.info().fields) |field|
-            combine_set.addOrLeave(field.name);
+        while (iterator.next()) |key|
+            combine_set.addOrLeave(key);
+        return combine_set;
     }
 }
 
@@ -242,5 +247,19 @@ test isDisjoint {
         try std.testing.expect(!set1.isDisjoint(set2));
         try std.testing.expect(set1.isDisjoint(set3));
         try std.testing.expect(!set2.isDisjoint(set3));
+    }
+}
+
+test combination {
+    comptime {
+        const set1 = Set.from(.{ "a", "b" });
+        const set2 = Set.from(.{ "c", "d" });
+
+        const set3 = set1.combination(set2);
+
+        try std.testing.expect(set3.has("a"));
+        try std.testing.expect(set3.has("b"));
+        try std.testing.expect(set3.has("c"));
+        try std.testing.expect(set3.has("d"));
     }
 }
