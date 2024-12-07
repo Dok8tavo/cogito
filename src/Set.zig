@@ -114,10 +114,24 @@ pub fn isDisjoint(comptime set1: Set, comptime set2: Set) bool {
     } else true;
 }
 
+// == Testing ==
 test has {
     comptime {
-        const set = Set.from(.{"key"});
-        try std.testing.expect(set.has("key"));
-        try std.testing.expect(!set.has("not_key"));
+        const set = Set.from(.{"item"});
+        try std.testing.expect(set.has("item"));
+        try std.testing.expect(!set.has("not item"));
+    }
+}
+
+test size {
+    comptime {
+        var set = Set{};
+        try std.testing.expectEqual(0, set.size());
+
+        set.add("item 1");
+        try std.testing.expectEqual(1, set.size());
+
+        set.add("item 2");
+        try std.testing.expectEqual(2, set.size());
     }
 }

@@ -64,6 +64,10 @@ pub fn from(comptime kv_struct: anytype) Map {
     return Map{ .type = @Type(kv_info) };
 }
 
+pub fn size(comptime map: Map) usize {
+    return map.info().fields.len;
+}
+
 // == Accessing items ==
 pub fn has(comptime map: Map, comptime key: []const u8) bool {
     return @hasField(map.type, key);
@@ -205,11 +209,6 @@ pub fn replaceOrLeave(
 ) void {
     if (map.has(key))
         map.replace(key, value);
-}
-
-// == inner functions ==
-fn size(comptime map: Map) usize {
-    return map.info().fields.len;
 }
 
 fn info(comptime map: Map) std.builtin.Type.Struct {
