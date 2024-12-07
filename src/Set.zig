@@ -194,3 +194,13 @@ test addOrRemove {
         try std.testing.expect(set.has("item"));
     }
 }
+
+test remove {
+    comptime {
+        var set = Set.from(.{"item"});
+        try std.testing.expect(set.has("item"));
+
+        set.remove("item");
+        try std.testing.expect(!set.has("item"));
+    }
+}
