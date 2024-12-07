@@ -42,8 +42,8 @@ pub fn build(b: *std.Build) void {
     });
 
     const documentation = b.addInstallDirectory(.{
-        .install_dir = .prefix,
-        .install_subdir = "doc",
+        .install_dir = .{ .custom = "doc" },
+        .install_subdir = "",
         .source_dir = object.getEmittedDocs(),
     });
 

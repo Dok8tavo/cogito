@@ -24,6 +24,7 @@
 const std = @import("std");
 
 pub const Map = @import("Map.zig");
+pub const Set = @import("Set.zig");
 
 pub fn compileError(comptime fmt: []const u8, comptime args: anytype) noreturn {
     @compileError(std.fmt.comptimePrint(fmt, args));
@@ -31,4 +32,5 @@ pub fn compileError(comptime fmt: []const u8, comptime args: anytype) noreturn {
 
 test {
     _ = Map;
+    _ = Set;
 }
