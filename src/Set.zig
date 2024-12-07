@@ -230,3 +230,15 @@ test removeOrLeave {
         try std.testing.expect(!set.has("item"));
     }
 }
+
+test isDisjoint {
+    comptime {
+        const set1 = Set.from(.{ "a", "b" });
+        const set2 = Set.from(.{ "b", "c" });
+        const set3 = Set.from(.{ "c", "d" });
+
+        try std.testing.expect(!set1.isDisjoint(set2));
+        try std.testing.expect(set1.isDisjoint(set3));
+        try std.testing.expect(!set2.isDisjoint(set3));
+    }
+}

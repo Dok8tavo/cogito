@@ -211,9 +211,85 @@ pub fn replaceOrLeave(
         map.replace(key, value);
 }
 
-fn info(comptime map: Map) std.builtin.Type.Struct {
-    return @typeInfo(map.type).Struct;
+// == Iterating ==
+pub const KeyIterator = struct {
+    index: usize = 0,
+    map: Map = .{},
+
+    pub fn peek(comptime iterator: KeyIterator) ?[:0]const u8 {
+        return if (iterator.map.size() <= iterator.index)
+            null
+        else
+            iterator.map.info().fields[iterator.index].name;
+    }
+
+    pub fn next(comptime iterator: *KeyIterator) ?[:0]const u8 {
+        return if (iterator.peek()) |key| {
+            iterator.index += 1;
+            return key;
+        } else null;
+    }
+};
+
+pub fn iterateKeys(comptime map: Map) KeyIterator {
+    return KeyIterator{ .map = map };
 }
+
+pub const ValueIterator = struct {
+    index: usize = 0,
+    map: Map = .{},
+
+    pub fn Peek(comptime iterator: ValueIterator) type {
+        return if (iterator.map.size() <= iterator.index)
+            @Type(.NoReturn)
+        else
+            iterator.map.info().fields[iterator.index].type;
+    }
+
+    pub fn peek(comptime iterator: ValueIterator) ?Peek(iterator) {
+        return if (iterator.map.size() <= iterator.index)
+            null
+        else
+            iterator.map.get(iterator.map.info().fields[iterator.index].name);
+    }
+
+    pub fn next(comptime iterator: *ValueIterator) ?Peek(iterator) {
+        return if (iterator.peek()) |value| {
+            iterator.index += 1;
+            return value;
+        } else null;
+    }
+};
+
+pub fn iterateValues(comptime map: Map) ValueIterator {
+    return ValueIterator{ .map = map };
+}
+
+pub const Iterator = struct {
+    index: usize = 0,
+    map: Map = .{},
+
+    pub fn Peek(comptime iterator: Iterator) type {
+        return if (iterator.map.size() <= iterator.index)
+            @Type(.NoReturn)
+        else
+            struct { [:0]const u8, iterator.map.info().fields[iterator.index].type };
+    }
+
+    pub fn peek(comptime iterator: Iterator) ?Peek(iterator) {
+        return if (iterator.map.size() <= iterator.index) null else .{
+            iterator.map.info().fields[iterator.index],
+            iterator.map.get(iterator.map.info().fields[iterator.index].name),
+        };
+    }
+
+    pub fn next(comptime iterator: *Iterator) ?Peek(iterator) {
+        return if (iterator.peek()) |key_value| {
+            iterator.index += 1;
+            return key_value;
+        } else null;
+    }
+};
 
 // == Testing ==
 test add {
@@ -368,4 +444,8 @@ test get {
         try std.testing.expectEqual(1, map.get("key"));
         try std.testing.expectEqual(null, map.get("not_key"));
     }
+}
+
+fn info(comptime map: Map) std.builtin.Type.Struct {
+    return @typeInfo(map.type).Struct;
 }
