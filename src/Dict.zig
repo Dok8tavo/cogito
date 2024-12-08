@@ -32,19 +32,19 @@ const std = @import("std");
 const t = @import("testing.zig");
 
 const KeyValueInfo = std.builtin.Type.StructField;
-const Map = @This();
+const Dict = @This();
 
-pub inline fn from(kv_struct: anytype) Map {
+pub inline fn from(kv_struct: anytype) Dict {
     const KVStruct = @TypeOf(kv_struct);
     const kv_info = @typeInfo(KVStruct);
 
     var kv_struct_info = if (kv_info == .Struct) kv_info.Struct else t.compileError(
-        "A map must be made from a `.Struct`, not a `.{s}` like `{s}`!",
+        "A dict must be made from a `.Struct`, not a `.{s}` like `{s}`!",
         .{ @tagName(kv_info), @typeName(KVStruct) },
     );
 
     if (kv_struct_info.is_tuple) t.compileError(
-        "A map must be made from a struct, not a tuple like `{s}`!",
+        "A dict must be made from a struct, not a tuple like `{s}`!",
         .{@typeName(KVStruct)},
     );
 
@@ -61,51 +61,51 @@ pub inline fn from(kv_struct: anytype) Map {
 
     kv_struct_info.fields = fields;
 
-    return Map{ .inner = @Type(kv_info) };
+    return Dict{ .inner = @Type(kv_info) };
 }
 
-pub inline fn size(map: Map) usize {
-    return map.info().fields.len;
+pub inline fn size(dict: Dict) usize {
+    return dict.info().fields.len;
 }
 
 // == Accessing items ==
-pub inline fn has(map: Map, key: anytype) bool {
-    return @hasField(map.inner, intoString(key));
+pub inline fn has(dict: Dict, key: anytype) bool {
+    return @hasField(dict.inner, intoString(key));
 }
 
-pub inline fn Get(map: anytype, key: anytype) type {
-    return if (map.has(key))
-        @TypeOf(@field(map.inner{}, intoString(key)))
+pub inline fn Get(dict: anytype, key: anytype) type {
+    return if (dict.has(key))
+        @TypeOf(@field(dict.inner{}, intoString(key)))
     else
         noreturn;
 }
 
-pub inline fn get(map: Map, key: anytype) ?Get(map, key) {
-    return if (map.has(key)) @field(map.inner{}, intoString(key)) else null;
+pub inline fn get(dict: Dict, key: anytype) ?Get(dict, key) {
+    return if (dict.has(key)) @field(dict.inner{}, intoString(key)) else null;
 }
 
 // == Adding items ==
 pub const AddError = error{KeyAlreadyExists};
 
-pub inline fn addOrErr(map: *Map, key: anytype, value: anytype) AddError!void {
-    if (map.has(key))
+pub inline fn addOrErr(dict: *Dict, key: anytype, value: anytype) AddError!void {
+    if (dict.has(key))
         return AddError.KeyAlreadyExists;
-    map.add(key, value);
+    dict.add(key, value);
 }
 
-pub inline fn addOrLeave(map: *Map, key: anytype, value: anytype) void {
-    if (!map.has(key))
-        map.add(key, value);
+pub inline fn addOrLeave(dict: *Dict, key: anytype, value: anytype) void {
+    if (!dict.has(key))
+        dict.add(key, value);
 }
 
-pub inline fn addOrReplace(map: *Map, key: anytype, value: anytype) void {
-    map.replaceOrErr(key, value) catch map.add(key, value);
+pub inline fn addOrReplace(dict: *Dict, key: anytype, value: anytype) void {
+    dict.replaceOrErr(key, value) catch dict.add(key, value);
 }
 
-pub inline fn add(map: *Map, key: anytype, value: anytype) void {
+pub inline fn add(dict: *Dict, key: anytype, value: anytype) void {
     const Value = @TypeOf(value);
-    var struct_info = map.info();
-    struct_info.fields = map.info().fields ++ &[_]KeyValueInfo{.{
+    var struct_info = dict.info();
+    struct_info.fields = dict.info().fields ++ &[_]KeyValueInfo{.{
         .alignment = @alignOf(Value),
         .name = intoString(key) ++ "\x00",
         .default_value = @ptrCast(&value),
@@ -113,82 +113,82 @@ pub inline fn add(map: *Map, key: anytype, value: anytype) void {
         .type = Value,
     }};
 
-    map.inner = @Type(.{ .Struct = struct_info });
+    dict.inner = @Type(.{ .Struct = struct_info });
 }
 
 // == Removing items ==
 pub const RemoveError = error{KeyDoesNotExist};
 
-pub inline fn remove(map: *Map, key: anytype) void {
-    var struct_info = map.info();
-    const new_length = map.size() - 1;
+pub inline fn remove(dict: *Dict, key: anytype) void {
+    var struct_info = dict.info();
+    const new_length = dict.size() - 1;
     for (0..new_length) |index| {
         if (std.mem.eql(u8, struct_info.fields[index].name, intoString(key))) {
-            struct_info.fields = map.info().fields[0..index] ++ map.info().fields[index + 1 ..];
+            struct_info.fields = dict.info().fields[0..index] ++ dict.info().fields[index + 1 ..];
             break;
         }
-    } else struct_info.fields = map.info().fields[0..new_length];
+    } else struct_info.fields = dict.info().fields[0..new_length];
 
-    map.inner = @Type(.{ .Struct = struct_info });
+    dict.inner = @Type(.{ .Struct = struct_info });
 }
 
-pub inline fn removeOrErr(map: *Map, key: anytype) RemoveError!void {
-    if (!map.has(key))
+pub inline fn removeOrErr(dict: *Dict, key: anytype) RemoveError!void {
+    if (!dict.has(key))
         return RemoveError.KeyDoesNotExist;
-    map.remove(key);
+    dict.remove(key);
 }
 
-pub inline fn removeOrLeave(map: *Map, key: anytype) void {
-    if (map.has(key))
-        map.remove(key);
+pub inline fn removeOrLeave(dict: *Dict, key: anytype) void {
+    if (dict.has(key))
+        dict.remove(key);
 }
 
 // == Popping items ==
-pub inline fn pop(map: *Map, key: anytype) Get(map, key) {
-    defer map.remove(key);
-    return @field(map.inner{}, intoString(key));
+pub inline fn pop(dict: *Dict, key: anytype) Get(dict, key) {
+    defer dict.remove(key);
+    return @field(dict.inner{}, intoString(key));
 }
 
-pub inline fn popOrErr(map: *Map, key: anytype) RemoveError!Get(map, key) {
-    if (!map.has(key))
+pub inline fn popOrErr(dict: *Dict, key: anytype) RemoveError!Get(dict, key) {
+    if (!dict.has(key))
         return RemoveError.KeyDoesNotExist;
-    return map.pop(key);
+    return dict.pop(key);
 }
 
-pub inline fn popOrLeave(map: *Map, key: anytype) ?Get(map, key) {
-    return if (map.has(key))
-        map.pop(key)
+pub inline fn popOrLeave(dict: *Dict, key: anytype) ?Get(dict, key) {
+    return if (dict.has(key))
+        dict.pop(key)
     else
         null;
 }
 
 // == Replacing items ==
-pub inline fn replace(map: *Map, key: anytype, value: anytype) void {
-    map.remove(key);
-    map.add(key, value);
+pub inline fn replace(dict: *Dict, key: anytype, value: anytype) void {
+    dict.remove(key);
+    dict.add(key, value);
 }
 
-pub inline fn replaceOrErr(map: *Map, key: anytype, value: anytype) RemoveError!void {
-    if (!map.has(key))
+pub inline fn replaceOrErr(dict: *Dict, key: anytype, value: anytype) RemoveError!void {
+    if (!dict.has(key))
         return RemoveError.KeyDoesNotExist;
-    map.replace(key, value);
+    dict.replace(key, value);
 }
 
-pub inline fn replaceOrLeave(map: *Map, key: anytype, value: anytype) void {
-    if (map.has(key))
-        map.replace(key, value);
+pub inline fn replaceOrLeave(dict: *Dict, key: anytype, value: anytype) void {
+    if (dict.has(key))
+        dict.replace(key, value);
 }
 
 // == Iterating ==
 pub const KeyIterator = struct {
     index: usize = 0,
-    map: Map = .{},
+    dict: Dict = .{},
 
     pub inline fn peek(iterator: KeyIterator) ?[:0]const u8 {
-        return if (iterator.map.size() <= iterator.index)
+        return if (iterator.dict.size() <= iterator.index)
             null
         else
-            iterator.map.info().fields[iterator.index].name;
+            iterator.dict.info().fields[iterator.index].name;
     }
 
     pub inline fn next(iterator: *KeyIterator) ?[:0]const u8 {
@@ -199,26 +199,26 @@ pub const KeyIterator = struct {
     }
 };
 
-pub inline fn iterateKeys(map: Map) KeyIterator {
-    return KeyIterator{ .map = map };
+pub inline fn iterateKeys(dict: Dict) KeyIterator {
+    return KeyIterator{ .dict = dict };
 }
 
 pub const ValueIterator = struct {
     index: usize = 0,
-    map: Map = .{},
+    dict: Dict = .{},
 
     pub inline fn Peek(iterator: ValueIterator) type {
-        return if (iterator.map.size() <= iterator.index)
+        return if (iterator.dict.size() <= iterator.index)
             noreturn
         else
-            iterator.map.info().fields[iterator.index].type;
+            iterator.dict.info().fields[iterator.index].type;
     }
 
     pub inline fn peek(iterator: ValueIterator) ?Peek(iterator) {
-        return if (iterator.map.size() <= iterator.index)
+        return if (iterator.dict.size() <= iterator.index)
             null
         else
-            iterator.map.get(iterator.map.info().fields[iterator.index].name);
+            iterator.dict.get(iterator.dict.info().fields[iterator.index].name);
     }
 
     pub inline fn next(iterator: *ValueIterator) ?Peek(iterator.*) {
@@ -229,26 +229,26 @@ pub const ValueIterator = struct {
     }
 };
 
-pub inline fn iterateValues(map: Map) ValueIterator {
-    return ValueIterator{ .map = map };
+pub inline fn iterateValues(dict: Dict) ValueIterator {
+    return ValueIterator{ .dict = dict };
 }
 
 pub const Iterator = struct {
     index: usize = 0,
-    map: Map = .{},
+    dict: Dict = .{},
 
     pub inline fn Peek(iterator: Iterator) type {
-        return if (iterator.map.size() <= iterator.index)
+        return if (iterator.dict.size() <= iterator.index)
             noreturn
         else
-            struct { [:0]const u8, iterator.map.info().fields[iterator.index].type };
+            struct { [:0]const u8, iterator.dict.info().fields[iterator.index].type };
     }
 
     pub inline fn peek(iterator: Iterator) ?Peek(iterator) {
-        if (iterator.map.size() <= iterator.index) return null;
+        if (iterator.dict.size() <= iterator.index) return null;
 
-        const key = iterator.map.info().fields[iterator.index].name;
-        return .{ key, @field((iterator.map.inner{}), key) };
+        const key = iterator.dict.info().fields[iterator.index].name;
+        return .{ key, @field((iterator.dict.inner{}), key) };
     }
 
     pub inline fn next(iterator: *Iterator) ?Peek(iterator.*) {
@@ -259,77 +259,77 @@ pub const Iterator = struct {
     }
 };
 
-pub inline fn iterate(map: Map) Iterator {
-    return Iterator{ .map = map };
+pub inline fn iterate(dict: Dict) Iterator {
+    return Iterator{ .dict = dict };
 }
 
 // == Testing ==
 test add {
     comptime {
-        var map = Map{};
-        map.add(.key, "value");
-        t.compTry(std.testing.expectEqualStrings("value", @field(map.inner{}, "key")));
+        var dict = Dict{};
+        dict.add(.key, "value");
+        t.compTry(std.testing.expectEqualStrings("value", @field(dict.inner{}, "key")));
     }
 }
 
 test addOrErr {
     comptime {
-        var map = Map.from(.{ .key1 = 1 });
-        const add_key1 = map.addOrErr(.key1, 2); // this is an error
-        const add_key2 = map.addOrErr(.key2, 3); // this isn't
+        var dict = Dict.from(.{ .key1 = 1 });
+        const add_key1 = dict.addOrErr(.key1, 2); // this is an error
+        const add_key2 = dict.addOrErr(.key2, 3); // this isn't
 
         t.compTry(std.testing.expectError(AddError.KeyAlreadyExists, add_key1));
         t.compTry(std.testing.expectEqual(void{}, add_key2));
 
-        t.compTry(std.testing.expectEqual(1, (map.inner{}).key1));
-        t.compTry(std.testing.expectEqual(3, (map.inner{}).key2));
+        t.compTry(std.testing.expectEqual(1, (dict.inner{}).key1));
+        t.compTry(std.testing.expectEqual(3, (dict.inner{}).key2));
     }
 }
 
 test addOrLeave {
     comptime {
-        var map = Map.from(.{ .key1 = 1 });
-        map.addOrLeave(.key1, 2); // does nothing
-        map.addOrLeave(.key2, 3);
+        var dict = Dict.from(.{ .key1 = 1 });
+        dict.addOrLeave(.key1, 2); // does nothing
+        dict.addOrLeave(.key2, 3);
 
-        t.compTry(std.testing.expectEqual(1, (map.inner{}).key1));
-        t.compTry(std.testing.expectEqual(3, (map.inner{}).key2));
+        t.compTry(std.testing.expectEqual(1, (dict.inner{}).key1));
+        t.compTry(std.testing.expectEqual(3, (dict.inner{}).key2));
     }
 }
 
 test addOrReplace {
     comptime {
-        var map = Map.from(.{ .key = 1 });
-        map.addOrReplace(.key, 2);
-        map.addOrReplace(.not_key, 3);
+        var dict = Dict.from(.{ .key = 1 });
+        dict.addOrReplace(.key, 2);
+        dict.addOrReplace(.not_key, 3);
 
-        t.compTry(std.testing.expectEqual(2, (map.inner{}).key));
-        t.compTry(std.testing.expectEqual(3, (map.inner{}).not_key));
+        t.compTry(std.testing.expectEqual(2, (dict.inner{}).key));
+        t.compTry(std.testing.expectEqual(3, (dict.inner{}).not_key));
     }
 }
 
 test remove {
     comptime {
-        var map = Map.from(.{ .key = 1 });
+        var dict = Dict.from(.{ .key = 1 });
 
-        t.compTry(std.testing.expect(@hasField(map.inner, "key")));
-        map.remove(.key);
-        t.compTry(std.testing.expect(!@hasField(map.inner, "key")));
+        t.compTry(std.testing.expect(@hasField(dict.inner, "key")));
+        dict.remove(.key);
+        t.compTry(std.testing.expect(!@hasField(dict.inner, "key")));
     }
 }
 
 test removeOrErr {
     comptime {
-        var map = Map.from(.{ .key = 1 });
+        var dict = Dict.from(.{ .key = 1 });
 
-        t.compTry(std.testing.expect(@hasField(map.inner, "key")));
-        t.compTry(std.testing.expect(!@hasField(map.inner, "not_key")));
+        t.compTry(std.testing.expect(@hasField(dict.inner, "key")));
+        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
 
-        const remove_key = map.removeOrErr(.key);
-        const remove_not_key = map.removeOrErr(.not_key);
+        const remove_key = dict.removeOrErr(.key);
+        const remove_not_key = dict.removeOrErr(.not_key);
 
-        t.compTry(std.testing.expect(!@hasField(map.inner, "key")));
-        t.compTry(std.testing.expect(!@hasField(map.inner, "not_key")));
+        t.compTry(std.testing.expect(!@hasField(dict.inner, "key")));
+        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
 
         t.compTry(std.testing.expectEqual(void{}, remove_key));
         t.compTry(std.testing.expectError(RemoveError.KeyDoesNotExist, remove_not_key));
@@ -338,41 +338,41 @@ test removeOrErr {
 
 test removeOrLeave {
     comptime {
-        var map = Map.from(.{ .key = 1 });
+        var dict = Dict.from(.{ .key = 1 });
 
-        t.compTry(std.testing.expect(@hasField(map.inner, "key")));
-        t.compTry(std.testing.expect(!@hasField(map.inner, "not_key")));
+        t.compTry(std.testing.expect(@hasField(dict.inner, "key")));
+        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
 
-        map.removeOrLeave(.key);
-        map.removeOrLeave(.not_key);
+        dict.removeOrLeave(.key);
+        dict.removeOrLeave(.not_key);
 
-        t.compTry(std.testing.expect(!@hasField(map.inner, "key")));
-        t.compTry(std.testing.expect(!@hasField(map.inner, "not_key")));
+        t.compTry(std.testing.expect(!@hasField(dict.inner, "key")));
+        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
     }
 }
 
 test replace {
     comptime {
-        var map = Map.from(.{ .key = 1 });
+        var dict = Dict.from(.{ .key = 1 });
 
-        t.compTry(std.testing.expectEqual(1, (map.inner{}).key));
-        map.replace(.key, "not even a `comptime_int`");
-        t.compTry(std.testing.expectEqualStrings("not even a `comptime_int`", (map.inner{}).key));
+        t.compTry(std.testing.expectEqual(1, (dict.inner{}).key));
+        dict.replace(.key, "not even a `comptime_int`");
+        t.compTry(std.testing.expectEqualStrings("not even a `comptime_int`", (dict.inner{}).key));
     }
 }
 
 test replaceOrErr {
     comptime {
-        var map = Map.from(.{ .key = 1 });
+        var dict = Dict.from(.{ .key = 1 });
 
-        t.compTry(std.testing.expectEqual(1, (map.inner{}).key));
-        t.compTry(std.testing.expect(!@hasField(map.inner, "not_key")));
+        t.compTry(std.testing.expectEqual(1, (dict.inner{}).key));
+        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
 
-        const replace_key = map.replaceOrErr(.key, 2);
-        const replace_not_key = map.replaceOrErr(.not_key, 2);
+        const replace_key = dict.replaceOrErr(.key, 2);
+        const replace_not_key = dict.replaceOrErr(.not_key, 2);
 
-        t.compTry(std.testing.expectEqual(2, (map.inner{}).key));
-        t.compTry(std.testing.expect(!@hasField(map.inner, "not_key")));
+        t.compTry(std.testing.expectEqual(2, (dict.inner{}).key));
+        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
 
         t.compTry(std.testing.expectEqual(void{}, replace_key));
         t.compTry(std.testing.expectError(RemoveError.KeyDoesNotExist, replace_not_key));
@@ -381,69 +381,69 @@ test replaceOrErr {
 
 test replaceOrLeave {
     comptime {
-        var map = Map.from(.{ .key = 1 });
+        var dict = Dict.from(.{ .key = 1 });
 
-        t.compTry(std.testing.expectEqual(1, (map.inner{}).key));
-        t.compTry(std.testing.expect(!@hasField(map.inner, "not_key")));
+        t.compTry(std.testing.expectEqual(1, (dict.inner{}).key));
+        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
 
-        map.replaceOrLeave(.key, 2);
-        map.replaceOrLeave(.not_key, 2);
+        dict.replaceOrLeave(.key, 2);
+        dict.replaceOrLeave(.not_key, 2);
 
-        t.compTry(std.testing.expectEqual(2, (map.inner{}).key));
-        t.compTry(std.testing.expect(!@hasField(map.inner, "not_key")));
+        t.compTry(std.testing.expectEqual(2, (dict.inner{}).key));
+        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
     }
 }
 
 test has {
     comptime {
-        var map = Map.from(.{ .key = 1 });
-        t.compTry(std.testing.expect(map.has(.key)));
-        t.compTry(std.testing.expect(!map.has(.not_key)));
+        var dict = Dict.from(.{ .key = 1 });
+        t.compTry(std.testing.expect(dict.has(.key)));
+        t.compTry(std.testing.expect(!dict.has(.not_key)));
     }
 }
 
 test Get {
     comptime {
-        const map = Map.from(.{ .key = 1 });
-        t.compTry(std.testing.expectEqual(comptime_int, Map.Get(map, .key)));
-        t.compTry(std.testing.expectEqual(noreturn, Map.Get(map, .not_key)));
+        const dict = Dict.from(.{ .key = 1 });
+        t.compTry(std.testing.expectEqual(comptime_int, Dict.Get(dict, .key)));
+        t.compTry(std.testing.expectEqual(noreturn, Dict.Get(dict, .not_key)));
     }
 }
 
 test get {
     comptime {
-        const map = Map.from(.{ .key = 1 });
-        t.compTry(std.testing.expectEqual(1, map.get(.key)));
-        t.compTry(std.testing.expectEqual(null, map.get(.not_key)));
+        const dict = Dict.from(.{ .key = 1 });
+        t.compTry(std.testing.expectEqual(1, dict.get(.key)));
+        t.compTry(std.testing.expectEqual(null, dict.get(.not_key)));
     }
 }
 
 test pop {
     comptime {
-        var map = Map.from(.{ .key = 1 });
-        t.compTry(std.testing.expectEqual(1, map.pop(.key)));
-        t.compTry(std.testing.expect(!map.has(.key)));
+        var dict = Dict.from(.{ .key = 1 });
+        t.compTry(std.testing.expectEqual(1, dict.pop(.key)));
+        t.compTry(std.testing.expect(!dict.has(.key)));
     }
 }
 
 test popOrErr {
     comptime {
-        var map = Map.from(.{ .key = 1 });
-        t.compTry(std.testing.expectEqual(1, map.popOrErr(.key)));
-        t.compTry(std.testing.expectError(RemoveError.KeyDoesNotExist, map.popOrErr(.key)));
+        var dict = Dict.from(.{ .key = 1 });
+        t.compTry(std.testing.expectEqual(1, dict.popOrErr(.key)));
+        t.compTry(std.testing.expectError(RemoveError.KeyDoesNotExist, dict.popOrErr(.key)));
     }
 }
 
 test popOrLeave {
     comptime {
-        var map = Map.from(.{ .key = 1 });
-        try std.testing.expect(map.has(.key));
+        var dict = Dict.from(.{ .key = 1 });
+        try std.testing.expect(dict.has(.key));
 
-        const pop1 = map.popOrLeave(.key);
-        t.compTry(std.testing.expect(!map.has(.key)));
+        const pop1 = dict.popOrLeave(.key);
+        t.compTry(std.testing.expect(!dict.has(.key)));
 
-        const pop2 = map.popOrLeave(.key);
-        t.compTry(std.testing.expect(!map.has(.key)));
+        const pop2 = dict.popOrLeave(.key);
+        t.compTry(std.testing.expect(!dict.has(.key)));
 
         t.compTry(std.testing.expectEqual(1, pop1));
         t.compTry(std.testing.expectEqual(null, pop2));
@@ -452,8 +452,8 @@ test popOrLeave {
 
 test iterate {
     comptime {
-        const map = Map.from(.{ .key1 = 1, .key2 = 2 });
-        var iterator = map.iterate();
+        const dict = Dict.from(.{ .key1 = 1, .key2 = 2 });
+        var iterator = dict.iterate();
 
         const peek1 = iterator.peek() orelse
             t.compTry(error.UnexpectedNull);
@@ -492,8 +492,8 @@ test iterate {
 
 test iterateKeys {
     comptime {
-        const map = Map.from(.{ .key1 = 1, .key2 = 2 });
-        var iterator = map.iterateKeys();
+        const dict = Dict.from(.{ .key1 = 1, .key2 = 2 });
+        var iterator = dict.iterateKeys();
 
         const peek1 = iterator.peek() orelse
             t.compTry(error.UnexpectedNull);
@@ -527,8 +527,8 @@ test iterateKeys {
 
 test iterateValues {
     comptime {
-        const map = Map.from(.{ .key1 = 1, .key2 = 2 });
-        var iterator = map.iterateValues();
+        const dict = Dict.from(.{ .key1 = 1, .key2 = 2 });
+        var iterator = dict.iterateValues();
 
         const peek1 = iterator.peek() orelse
             t.compTry(error.UnexpectedNull);
@@ -578,6 +578,6 @@ inline fn intoString(comptime any: anytype) []const u8 {
     t.compileError("Can't convert `{s}` into a string!", .{@typeName(Any)});
 }
 
-inline fn info(comptime map: Map) std.builtin.Type.Struct {
-    return @typeInfo(map.inner).Struct;
+inline fn info(comptime dict: Dict) std.builtin.Type.Struct {
+    return @typeInfo(dict.inner).Struct;
 }

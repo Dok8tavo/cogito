@@ -26,11 +26,11 @@ const std = @import("std");
 pub const testing = @import("testing.zig");
 
 pub const List = @import("List.zig");
-pub const Map = @import("Map.zig");
+pub const Dict = @import("Dict.zig");
 pub const Set = @import("Set.zig");
 
 test "all" {
     _ = List;
-    _ = Map;
+    _ = Dict;
     _ = Set;
 }

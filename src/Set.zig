@@ -21,12 +21,12 @@
 // SOFTWARE.
 //
 
-map: Map = .{},
+dict: Dict = .{},
 
 const std = @import("std");
 const t = @import("testing.zig");
 
-const Map = @import("Map.zig");
+const Dict = @import("Dict.zig");
 const Set = @This();
 
 pub inline fn from(items: anytype) Set {
@@ -36,24 +36,24 @@ pub inline fn from(items: anytype) Set {
 }
 
 pub inline fn has(set: Set, item: anytype) bool {
-    return set.map.has(item);
+    return set.dict.has(item);
 }
 
 pub inline fn size(set: Set) usize {
-    return set.map.size();
+    return set.dict.size();
 }
 
 // == Adding items ==
 pub inline fn add(set: *Set, item: anytype) void {
-    set.map.add(item, {});
+    set.dict.add(item, {});
 }
 
-pub inline fn addOrErr(set: *Set, item: anytype) Map.AddError!void {
-    try set.map.addOrErr(item, {});
+pub inline fn addOrErr(set: *Set, item: anytype) Dict.AddError!void {
+    try set.dict.addOrErr(item, {});
 }
 
 pub inline fn addOrLeave(set: *Set, item: anytype) void {
-    set.map.addOrLeave(item, {});
+    set.dict.addOrLeave(item, {});
 }
 
 pub inline fn addOrRemove(set: *Set, item: anytype) void {
@@ -62,21 +62,21 @@ pub inline fn addOrRemove(set: *Set, item: anytype) void {
 
 // == Removing items ==
 pub inline fn remove(set: *Set, item: anytype) void {
-    set.map.remove(item);
+    set.dict.remove(item);
 }
 
-pub inline fn removeOrErr(set: *Set, item: anytype) Map.RemoveError!void {
-    try set.map.removeOrErr(item);
+pub inline fn removeOrErr(set: *Set, item: anytype) Dict.RemoveError!void {
+    try set.dict.removeOrErr(item);
 }
 
 pub inline fn removeOrLeave(set: *Set, item: anytype) void {
-    set.map.removeOrLeave(item);
+    set.dict.removeOrLeave(item);
 }
 
 // == Combining sets ==
 pub inline fn combine(set1: Set, set2: Set) Set {
     var combine_set = set1;
-    var iterator = set2.map.iterateKeys();
+    var iterator = set2.dict.iterateKeys();
 
     while (iterator.next()) |key|
         combine_set.add(key);
@@ -84,33 +84,37 @@ pub inline fn combine(set1: Set, set2: Set) Set {
     return combine_set;
 }
 
-pub inline fn combineOrErr(set1: Set, set2: Set) Map.AddError!Set {
+pub inline fn combineOrErr(set1: Set, set2: Set) Dict.AddError!Set {
     if (!set1.isDisjoint(set2))
-        return Map.AddError.KeyAlreadyExists;
+        return Dict.AddError.KeyAlreadyExists;
+
     return set1.combine(set2);
 }
 
 pub inline fn combineOrLeave(set1: Set, set2: Set) Set {
     var combine_set = set1;
-    var iterator = set2.map.iterateKeys();
+    var iterator = set2.dict.iterateKeys();
 
     while (iterator.next()) |key|
         combine_set.addOrLeave(key);
+
     return combine_set;
 }
 
 pub inline fn intersection(set1: Set, set2: Set) Set {
     var intersection_set = Set{};
-    var iterator = set1.map.iterateKeys();
+    var iterator = set1.dict.iterateKeys();
 
     while (iterator.next()) |key|
         if (set2.has(key))
             intersection_set.add(key);
+
     return intersection_set;
 }
 
 pub inline fn isDisjoint(set1: Set, set2: Set) bool {
-    var iterator = set1.map.iterateKeys();
+    var iterator = set1.dict.iterateKeys();
+
     return while (iterator.next()) |key| {
         if (set2.has(key)) break false;
     } else true;
@@ -160,7 +164,7 @@ test addOrErr {
         const yes_err = set.addOrErr(.item);
 
         t.compTry(std.testing.expectEqual({}, not_err));
-        t.compTry(std.testing.expectEqual(Map.AddError.KeyAlreadyExists, yes_err));
+        t.compTry(std.testing.expectEqual(Dict.AddError.KeyAlreadyExists, yes_err));
     }
 }
 
@@ -213,7 +217,7 @@ test removeOrErr {
         const yes_err = set.removeOrErr(.item);
 
         t.compTry(std.testing.expectEqual({}, not_err));
-        t.compTry(std.testing.expectEqual(Map.RemoveError.KeyDoesNotExist, yes_err));
+        t.compTry(std.testing.expectEqual(Dict.RemoveError.KeyDoesNotExist, yes_err));
     }
 }
 
@@ -262,7 +266,7 @@ test combineOrErr {
         const set2 = Set.from(.{ .b, .c });
         const set3 = Set.from(.{ .c, .d });
 
-        t.compTry(std.testing.expectError(Map.AddError.KeyAlreadyExists, set1.combineOrErr(set2)));
+        t.compTry(std.testing.expectError(Dict.AddError.KeyAlreadyExists, set1.combineOrErr(set2)));
 
         const set4 = t.compTry(set1.combineOrErr(set3));
 
@@ -271,7 +275,7 @@ test combineOrErr {
         t.compTry(std.testing.expect(set4.has(.c)));
         t.compTry(std.testing.expect(set4.has(.d)));
 
-        t.compTry(std.testing.expectError(Map.AddError.KeyAlreadyExists, set2.combineOrErr(set3)));
+        t.compTry(std.testing.expectError(Dict.AddError.KeyAlreadyExists, set2.combineOrErr(set3)));
     }
 }
 
