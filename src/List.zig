@@ -72,7 +72,7 @@ pub inline fn size(list: List) usize {
 
 // == Accessing items ==
 pub inline fn Get(list: List, index: usize) type {
-    return if (index < list.size()) list.info().fields[index].type else noreturn;
+    return if (index < list.size()) list.info().fields[index].type else t.NoReturn;
 }
 
 pub inline fn get(list: List, index: usize) ?Get(list, index) {
@@ -84,7 +84,7 @@ pub inline fn get(list: List, index: usize) ?Get(list, index) {
 
 // == Popping items ==
 pub inline fn Pop(list: *const List) type {
-    return if (list.size() == 0) t.InactiveVariant else list.Get(list.size() - 1);
+    return if (list.size() == 0) t.NoReturn else list.Get(list.size() - 1);
 }
 
 pub inline fn pop(list: *List) ?Pop(list) {

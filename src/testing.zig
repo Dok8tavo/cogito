@@ -23,7 +23,7 @@
 
 const std = @import("std");
 
-pub const InactiveVariant = enum {};
+pub const NoReturn = enum {};
 
 pub inline fn compileError(fmt: []const u8, args: anytype) noreturn {
     @compileError(std.fmt.comptimePrint(fmt, args));
@@ -32,7 +32,7 @@ pub inline fn compileError(fmt: []const u8, args: anytype) noreturn {
 pub inline fn Payload(error_union: anytype) type {
     return switch (@typeInfo(@TypeOf(error_union))) {
         .ErrorUnion => |eu| eu.payload,
-        .ErrorSet => InactiveVariant,
+        .ErrorSet => NoReturn,
         else => unreachable,
     };
 }
@@ -41,7 +41,7 @@ pub inline fn ErrorSet(error_union: anytype) type {
     return switch (@typeInfo(@TypeOf(error_union))) {
         .ErrorUnion => |eu| eu.error_set,
         .ErrorSet => @TypeOf(error_union),
-        else => InactiveVariant,
+        else => NoReturn,
     };
 }
 

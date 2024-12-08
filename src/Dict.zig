@@ -77,7 +77,7 @@ pub inline fn Get(dict: anytype, key: anytype) type {
     return if (dict.has(key))
         @TypeOf(@field(dict.inner{}, intoString(key)))
     else
-        noreturn;
+        t.NoReturn;
 }
 
 pub inline fn get(dict: Dict, key: anytype) ?Get(dict, key) {
@@ -209,7 +209,7 @@ pub const ValueIterator = struct {
 
     pub inline fn Peek(iterator: ValueIterator) type {
         return if (iterator.dict.size() <= iterator.index)
-            noreturn
+            t.NoReturn
         else
             iterator.dict.info().fields[iterator.index].type;
     }
@@ -239,7 +239,7 @@ pub const Iterator = struct {
 
     pub inline fn Peek(iterator: Iterator) type {
         return if (iterator.dict.size() <= iterator.index)
-            noreturn
+            t.NoReturn
         else
             struct { [:0]const u8, iterator.dict.info().fields[iterator.index].type };
     }
@@ -406,7 +406,7 @@ test Get {
     comptime {
         const dict = Dict.from(.{ .key = 1 });
         t.compTry(std.testing.expectEqual(comptime_int, Dict.Get(dict, .key)));
-        t.compTry(std.testing.expectEqual(noreturn, Dict.Get(dict, .not_key)));
+        t.compTry(std.testing.expectEqual(t.NoReturn, Dict.Get(dict, .not_key)));
     }
 }
 
