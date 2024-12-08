@@ -23,11 +23,11 @@
 
 const std = @import("std");
 
-pub inline fn compileError(comptime fmt: []const u8, comptime args: anytype) noreturn {
+pub inline fn compileError(fmt: []const u8, args: anytype) noreturn {
     @compileError(std.fmt.comptimePrint(fmt, args));
 }
 
-pub inline fn Payload(comptime error_union: anytype) type {
+pub inline fn Payload(error_union: anytype) type {
     return switch (@typeInfo(@TypeOf(error_union))) {
         .ErrorUnion => |eu| eu.payload,
         .ErrorSet => noreturn,
@@ -35,7 +35,7 @@ pub inline fn Payload(comptime error_union: anytype) type {
     };
 }
 
-pub inline fn ErrorSet(comptime error_union: anytype) type {
+pub inline fn ErrorSet(error_union: anytype) type {
     return switch (@typeInfo(@TypeOf(error_union))) {
         .ErrorUnion => |eu| eu.error_set,
         .ErrorSet => @TypeOf(error_union),
@@ -43,7 +43,7 @@ pub inline fn ErrorSet(comptime error_union: anytype) type {
     };
 }
 
-pub inline fn compTry(comptime error_union: anytype) Payload(error_union) {
+pub inline fn compTry(error_union: anytype) Payload(error_union) {
     return error_union catch |err| compileError("`{s}.{s}`", .{
         @typeName(ErrorSet(error_union)),
         @errorName(err),

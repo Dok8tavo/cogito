@@ -34,7 +34,7 @@ const t = @import("testing.zig");
 const KeyValueInfo = std.builtin.Type.StructField;
 const Map = @This();
 
-pub inline fn from(comptime kv_struct: anytype) Map {
+pub inline fn from(kv_struct: anytype) Map {
     const KVStruct = @TypeOf(kv_struct);
     const kv_info = @typeInfo(KVStruct);
 
@@ -64,61 +64,45 @@ pub inline fn from(comptime kv_struct: anytype) Map {
     return Map{ .inner = @Type(kv_info) };
 }
 
-pub inline fn size(comptime map: Map) usize {
+pub inline fn size(map: Map) usize {
     return map.info().fields.len;
 }
 
 // == Accessing items ==
-pub inline fn has(comptime map: Map, comptime key: anytype) bool {
+pub inline fn has(map: Map, key: anytype) bool {
     return @hasField(map.inner, intoString(key));
 }
 
-pub inline fn Get(comptime map: anytype, comptime key: anytype) type {
+pub inline fn Get(map: anytype, key: anytype) type {
     return if (map.has(key))
         @TypeOf(@field(map.inner{}, intoString(key)))
     else
         noreturn;
 }
 
-pub inline fn get(comptime map: Map, comptime key: anytype) ?Get(map, key) {
+pub inline fn get(map: Map, key: anytype) ?Get(map, key) {
     return if (map.has(key)) @field(map.inner{}, intoString(key)) else null;
 }
 
 // == Adding items ==
 pub const AddError = error{KeyAlreadyExists};
 
-pub inline fn addOrErr(
-    comptime map: *Map,
-    comptime key: anytype,
-    comptime value: anytype,
-) AddError!void {
+pub inline fn addOrErr(map: *Map, key: anytype, value: anytype) AddError!void {
     if (map.has(key))
         return AddError.KeyAlreadyExists;
     map.add(key, value);
 }
 
-pub inline fn addOrLeave(
-    comptime map: *Map,
-    comptime key: anytype,
-    comptime value: anytype,
-) void {
+pub inline fn addOrLeave(map: *Map, key: anytype, value: anytype) void {
     if (!map.has(key))
         map.add(key, value);
 }
 
-pub inline fn addOrReplace(
-    comptime map: *Map,
-    comptime key: anytype,
-    comptime value: anytype,
-) void {
+pub inline fn addOrReplace(map: *Map, key: anytype, value: anytype) void {
     map.replaceOrErr(key, value) catch map.add(key, value);
 }
 
-pub inline fn add(
-    comptime map: *Map,
-    comptime key: anytype,
-    comptime value: anytype,
-) void {
+pub inline fn add(map: *Map, key: anytype, value: anytype) void {
     const Value = @TypeOf(value);
     var struct_info = map.info();
     struct_info.fields = map.info().fields ++ &[_]KeyValueInfo{.{
@@ -135,7 +119,7 @@ pub inline fn add(
 // == Removing items ==
 pub const RemoveError = error{KeyDoesNotExist};
 
-pub inline fn remove(comptime map: *Map, comptime key: anytype) void {
+pub inline fn remove(map: *Map, key: anytype) void {
     var struct_info = map.info();
     const new_length = map.size() - 1;
     for (0..new_length) |index| {
@@ -148,30 +132,30 @@ pub inline fn remove(comptime map: *Map, comptime key: anytype) void {
     map.inner = @Type(.{ .Struct = struct_info });
 }
 
-pub inline fn removeOrErr(comptime map: *Map, comptime key: anytype) RemoveError!void {
+pub inline fn removeOrErr(map: *Map, key: anytype) RemoveError!void {
     if (!map.has(key))
         return RemoveError.KeyDoesNotExist;
     map.remove(key);
 }
 
-pub inline fn removeOrLeave(comptime map: *Map, comptime key: anytype) void {
+pub inline fn removeOrLeave(map: *Map, key: anytype) void {
     if (map.has(key))
         map.remove(key);
 }
 
 // == Popping items ==
-pub inline fn pop(comptime map: *Map, comptime key: anytype) Get(map, key) {
+pub inline fn pop(map: *Map, key: anytype) Get(map, key) {
     defer map.remove(key);
     return @field(map.inner{}, intoString(key));
 }
 
-pub inline fn popOrErr(comptime map: *Map, comptime key: anytype) RemoveError!Get(map, key) {
+pub inline fn popOrErr(map: *Map, key: anytype) RemoveError!Get(map, key) {
     if (!map.has(key))
         return RemoveError.KeyDoesNotExist;
     return map.pop(key);
 }
 
-pub inline fn popOrLeave(comptime map: *Map, comptime key: anytype) ?Get(map, key) {
+pub inline fn popOrLeave(map: *Map, key: anytype) ?Get(map, key) {
     return if (map.has(key))
         map.pop(key)
     else
@@ -179,30 +163,18 @@ pub inline fn popOrLeave(comptime map: *Map, comptime key: anytype) ?Get(map, ke
 }
 
 // == Replacing items ==
-pub inline fn replace(
-    comptime map: *Map,
-    comptime key: anytype,
-    comptime value: anytype,
-) void {
+pub inline fn replace(map: *Map, key: anytype, value: anytype) void {
     map.remove(key);
     map.add(key, value);
 }
 
-pub inline fn replaceOrErr(
-    comptime map: *Map,
-    comptime key: anytype,
-    comptime value: anytype,
-) RemoveError!void {
+pub inline fn replaceOrErr(map: *Map, key: anytype, value: anytype) RemoveError!void {
     if (!map.has(key))
         return RemoveError.KeyDoesNotExist;
     map.replace(key, value);
 }
 
-pub inline fn replaceOrLeave(
-    comptime map: *Map,
-    comptime key: anytype,
-    comptime value: anytype,
-) void {
+pub inline fn replaceOrLeave(map: *Map, key: anytype, value: anytype) void {
     if (map.has(key))
         map.replace(key, value);
 }
@@ -212,14 +184,14 @@ pub const KeyIterator = struct {
     index: usize = 0,
     map: Map = .{},
 
-    pub inline fn peek(comptime iterator: KeyIterator) ?[:0]const u8 {
+    pub inline fn peek(iterator: KeyIterator) ?[:0]const u8 {
         return if (iterator.map.size() <= iterator.index)
             null
         else
             iterator.map.info().fields[iterator.index].name;
     }
 
-    pub inline fn next(comptime iterator: *KeyIterator) ?[:0]const u8 {
+    pub inline fn next(iterator: *KeyIterator) ?[:0]const u8 {
         return if (iterator.peek()) |key| {
             iterator.index += 1;
             return key;
@@ -227,7 +199,7 @@ pub const KeyIterator = struct {
     }
 };
 
-pub inline fn iterateKeys(comptime map: Map) KeyIterator {
+pub inline fn iterateKeys(map: Map) KeyIterator {
     return KeyIterator{ .map = map };
 }
 
@@ -235,21 +207,21 @@ pub const ValueIterator = struct {
     index: usize = 0,
     map: Map = .{},
 
-    pub inline fn Peek(comptime iterator: ValueIterator) type {
+    pub inline fn Peek(iterator: ValueIterator) type {
         return if (iterator.map.size() <= iterator.index)
             noreturn
         else
             iterator.map.info().fields[iterator.index].type;
     }
 
-    pub inline fn peek(comptime iterator: ValueIterator) ?Peek(iterator) {
+    pub inline fn peek(iterator: ValueIterator) ?Peek(iterator) {
         return if (iterator.map.size() <= iterator.index)
             null
         else
             iterator.map.get(iterator.map.info().fields[iterator.index].name);
     }
 
-    pub inline fn next(comptime iterator: *ValueIterator) ?Peek(iterator.*) {
+    pub inline fn next(iterator: *ValueIterator) ?Peek(iterator.*) {
         return if (iterator.peek()) |value| {
             iterator.index += 1;
             return value;
@@ -257,7 +229,7 @@ pub const ValueIterator = struct {
     }
 };
 
-pub inline fn iterateValues(comptime map: Map) ValueIterator {
+pub inline fn iterateValues(map: Map) ValueIterator {
     return ValueIterator{ .map = map };
 }
 
@@ -265,21 +237,21 @@ pub const Iterator = struct {
     index: usize = 0,
     map: Map = .{},
 
-    pub inline fn Peek(comptime iterator: Iterator) type {
+    pub inline fn Peek(iterator: Iterator) type {
         return if (iterator.map.size() <= iterator.index)
             noreturn
         else
             struct { [:0]const u8, iterator.map.info().fields[iterator.index].type };
     }
 
-    pub inline fn peek(comptime iterator: Iterator) ?Peek(iterator) {
+    pub inline fn peek(iterator: Iterator) ?Peek(iterator) {
         if (iterator.map.size() <= iterator.index) return null;
 
         const key = iterator.map.info().fields[iterator.index].name;
         return .{ key, @field((iterator.map.inner{}), key) };
     }
 
-    pub inline fn next(comptime iterator: *Iterator) ?Peek(iterator.*) {
+    pub inline fn next(iterator: *Iterator) ?Peek(iterator.*) {
         return if (iterator.peek()) |key_value| {
             iterator.index += 1;
             return key_value;
@@ -287,7 +259,7 @@ pub const Iterator = struct {
     }
 };
 
-pub inline fn iterate(comptime map: Map) Iterator {
+pub inline fn iterate(map: Map) Iterator {
     return Iterator{ .map = map };
 }
 

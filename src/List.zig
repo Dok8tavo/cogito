@@ -34,7 +34,7 @@ const std = @import("std");
 const List = @This();
 const ItemInfo = std.builtin.Type.StructField;
 
-pub inline fn from(comptime tuple: anytype) List {
+pub inline fn from(tuple: anytype) List {
     const Tuple = @TypeOf(tuple);
     const tuple_info = @typeInfo(Tuple);
 
@@ -64,16 +64,16 @@ pub inline fn from(comptime tuple: anytype) List {
     return List{ .inner = @Type(tuple_info) };
 }
 
-pub inline fn size(comptime list: List) usize {
+pub inline fn size(list: List) usize {
     return list.info().fields.len;
 }
 
 // == Accessing items ==
-pub inline fn Get(comptime list: List, comptime index: usize) type {
+pub inline fn Get(list: List, index: usize) type {
     return if (index < list.size()) list.info().fields[index].type else noreturn;
 }
 
-pub inline fn get(comptime list: List, comptime index: usize) ?Get(list, index) {
+pub inline fn get(list: List, index: usize) ?Get(list, index) {
     return if (index < list.size())
         @field(list.inner{}, list.info().fields[index].name)
     else
@@ -83,7 +83,7 @@ pub inline fn get(comptime list: List, comptime index: usize) ?Get(list, index) 
 // == Inserting items ==
 pub const InsertError = error{IndexOutOfBounds};
 
-pub inline fn insert(comptime list: *List, comptime item: anytype, comptime index: usize) void {
+pub inline fn insert(list: *List, item: anytype, index: usize) void {
     var struct_info = list.info();
 
     struct_info.fields = struct_info.fields[0..index] ++ &[_]ItemInfo{.{
@@ -100,11 +100,7 @@ pub inline fn insert(comptime list: *List, comptime item: anytype, comptime inde
     list.* = List{ .inner = @Type(.{ .Struct = struct_info }) };
 }
 
-pub inline fn insertOrErr(
-    comptime list: *List,
-    comptime item: anytype,
-    comptime index: usize,
-) InsertError!void {
+pub inline fn insertOrErr(list: *List, item: anytype, index: usize) InsertError!void {
     if (list.size() < index)
         return InsertError.IndexOutOfBounds;
     list.insert(item, index);
