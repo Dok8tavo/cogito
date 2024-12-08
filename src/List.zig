@@ -139,7 +139,28 @@ pub inline fn prepend(list: *List, item: anytype) void {
     list.insert(item, 0);
 }
 
+// == Combine lists ==
+pub inline fn concat(list: List, other: List) List {
+    var new_list = list;
+    for (0..other.size()) |i|
+        new_list.append((other.inner{})[i]);
+    return new_list;
+}
+
 // == Testing ==
+test concat {
+    comptime {
+        const list1 = List.from(.{ 1, 2, 3 });
+        const list2 = List.from(.{ "viva", "l'Algérie" });
+        const list3 = list1.concat(list2);
+
+        t.compTry(std.testing.expectEqualDeep(
+            list3.inner{},
+            .{ 1, 2, 3, "viva", "l'Algérie" },
+        ));
+    }
+}
+
 test prepend {
     comptime {
         var list = List{};
