@@ -29,7 +29,7 @@ pub const List = @import("List.zig");
 pub const Map = @import("Map.zig");
 pub const Set = @import("Set.zig");
 
-test {
+test "all" {
     _ = List;
     _ = Map;
     _ = Set;
