@@ -139,6 +139,19 @@ pub inline fn prepend(list: *List, item: anytype) void {
     list.insert(item, 0);
 }
 
+// == Removing items ==
+pub inline fn remove(list: *List, index: usize) void {
+    var new_info = list.info();
+    new_info.fields = if (index != 0) new_info.fields[0..index] else &.{};
+    for (index + 1..list.size()) |index2| {
+        var field = list.info().fields[index2];
+        field.name = std.fmt.comptimePrint("{}", .{index2 - 1});
+        new_info.fields = new_info.fields ++ &[_]ItemInfo{field};
+    }
+
+    list.* = List{ .inner = @Type(.{ .Struct = new_info }) };
+}
+
 // == Combine lists ==
 pub inline fn concat(list: List, other: List) List {
     var new_list = list;
@@ -148,6 +161,24 @@ pub inline fn concat(list: List, other: List) List {
 }
 
 // == Testing ==
+test remove {
+    comptime {
+        var list = List.from(.{ "Hello", "How", "are", "you" });
+
+        list.remove(2);
+        t.compTry(std.testing.expectEqualDeep(
+            list.inner{},
+            .{ "Hello", "How", "you" },
+        ));
+
+        list.remove(1);
+        t.compTry(std.testing.expectEqualDeep(
+            list.inner{},
+            .{ "Hello", "you" },
+        ));
+    }
+}
+
 test concat {
     comptime {
         const list1 = List.from(.{ 1, 2, 3 });
