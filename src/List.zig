@@ -82,6 +82,19 @@ pub inline fn get(list: List, index: usize) ?Get(list, index) {
         null;
 }
 
+// == Popping items ==
+pub inline fn Pop(list: *const List) type {
+    return if (list.size() == 0) t.InactiveVariant else list.Get(list.size() - 1);
+}
+
+pub inline fn pop(list: *List) ?Pop(list) {
+    return if (list.size() == 0) null else {
+        const index = list.size() - 1;
+        defer list.remove(index);
+        return (list.inner{})[index];
+    };
+}
+
 // == Inserting items ==
 
 pub inline fn insert(list: *List, item: anytype, index: usize) void {
@@ -172,6 +185,26 @@ pub inline fn concat(list: List, other: List) List {
 }
 
 // == Testing ==
+test pop {
+    const expect = std.testing.expectEqualDeep;
+    comptime {
+        var list = List.from(.{ 3, 10, 5, 16, 8, 4, 2, 1, 4, 2, 1 });
+
+        t.compTry(expect(1, list.pop()));
+        t.compTry(expect(2, list.pop()));
+        t.compTry(expect(4, list.pop()));
+        t.compTry(expect(1, list.pop()));
+        t.compTry(expect(2, list.pop()));
+        t.compTry(expect(4, list.pop()));
+        t.compTry(expect(8, list.pop()));
+        t.compTry(expect(16, list.pop()));
+        t.compTry(expect(5, list.pop()));
+        t.compTry(expect(10, list.pop()));
+        t.compTry(expect(3, list.pop()));
+        t.compTry(expect(null, list.pop()));
+    }
+}
+
 test removeOrError {
     comptime {
         var list = List.from(.{ 'a', 'b', 'c' });
@@ -183,6 +216,7 @@ test removeOrError {
         t.compTry(std.testing.expectEqualDeep(IndexError.IndexOutOfBounds, remove2));
     }
 }
+
 test removeOrLeave {
     comptime {
         var list = List.from(.{ .a, .b, .c });
