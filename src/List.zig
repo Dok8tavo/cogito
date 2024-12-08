@@ -34,6 +34,8 @@ const std = @import("std");
 const List = @This();
 const ItemInfo = std.builtin.Type.StructField;
 
+pub const IndexError = error{IndexOutOfBounds};
+
 pub inline fn from(tuple: anytype) List {
     const Tuple = @TypeOf(tuple);
     const tuple_info = @typeInfo(Tuple);
@@ -81,7 +83,6 @@ pub inline fn get(list: List, index: usize) ?Get(list, index) {
 }
 
 // == Inserting items ==
-pub const InsertError = error{IndexOutOfBounds};
 
 pub inline fn insert(list: *List, item: anytype, index: usize) void {
     var fields: []const ItemInfo = &.{};
@@ -125,9 +126,9 @@ pub inline fn insert(list: *List, item: anytype, index: usize) void {
     } }) };
 }
 
-pub inline fn insertOrErr(list: *List, item: anytype, index: usize) InsertError!void {
+pub inline fn insertOrErr(list: *List, item: anytype, index: usize) IndexError!void {
     if (list.size() < index)
-        return InsertError.IndexOutOfBounds;
+        return IndexError.IndexOutOfBounds;
     list.insert(item, index);
 }
 
@@ -152,6 +153,16 @@ pub inline fn remove(list: *List, index: usize) void {
     list.* = List{ .inner = @Type(.{ .Struct = new_info }) };
 }
 
+pub inline fn removeOrErr(list: *List, index: usize) IndexError!void {
+    if (list.size() <= index)
+        return IndexError.IndexOutOfBounds;
+    list.remove(index);
+}
+
+pub inline fn removeOrLeave(list: *List, index: usize) void {
+    list.removeOrErr(index) catch {};
+}
+
 // == Combine lists ==
 pub inline fn concat(list: List, other: List) List {
     var new_list = list;
@@ -161,21 +172,38 @@ pub inline fn concat(list: List, other: List) List {
 }
 
 // == Testing ==
+test removeOrErr {
+    comptime {
+        var list = List.from(.{ 'a', 'b', 'c' });
+
+        const remove1 = list.removeOrErr(2);
+        const remove2 = list.removeOrErr(2);
+
+        t.compTry(std.testing.expectEqualDeep({}, remove1));
+        t.compTry(std.testing.expectEqualDeep(IndexError.IndexOutOfBounds, remove2));
+    }
+}
+test removeOrLeave {
+    comptime {
+        var list = List.from(.{ .a, .b, .c });
+
+        list.removeOrLeave(2);
+        t.compTry(std.testing.expectEqualDeep(.{ .a, .b }, list.inner{}));
+
+        list.removeOrLeave(2);
+        t.compTry(std.testing.expectEqualDeep(.{ .a, .b }, list.inner{}));
+    }
+}
+
 test remove {
     comptime {
         var list = List.from(.{ "Hello", "How", "are", "you" });
 
         list.remove(2);
-        t.compTry(std.testing.expectEqualDeep(
-            list.inner{},
-            .{ "Hello", "How", "you" },
-        ));
+        t.compTry(std.testing.expectEqualDeep(.{ "Hello", "How", "you" }, list.inner{}));
 
         list.remove(1);
-        t.compTry(std.testing.expectEqualDeep(
-            list.inner{},
-            .{ "Hello", "you" },
-        ));
+        t.compTry(std.testing.expectEqualDeep(.{ "Hello", "you" }, list.inner{}));
     }
 }
 
@@ -258,7 +286,7 @@ test insertOrErr {
         var list = List.from(.{});
 
         t.compTry(std.testing.expectError(
-            InsertError.IndexOutOfBounds,
+            IndexError.IndexOutOfBounds,
             list.insertOrErr("Index is out of bounds!", 10_000),
         ));
 
