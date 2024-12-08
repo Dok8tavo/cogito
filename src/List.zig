@@ -84,20 +84,45 @@ pub inline fn get(list: List, index: usize) ?Get(list, index) {
 pub const InsertError = error{IndexOutOfBounds};
 
 pub inline fn insert(list: *List, item: anytype, index: usize) void {
-    var struct_info = list.info();
+    var fields: []const ItemInfo = &.{};
 
-    struct_info.fields = struct_info.fields[0..index] ++ &[_]ItemInfo{.{
-        .alignment = @alignOf(@TypeOf(item)),
-        .default_value = @ptrCast(&item),
-        .is_comptime = true,
-        .name = std.fmt.comptimePrint("{}", .{index}),
-        .type = @TypeOf(item),
-    }};
+    for (list.inner{}, 0..) |item2, index2| {
+        if (index2 == index) {
+            fields = fields ++ &[_]ItemInfo{.{
+                .alignment = @alignOf(@TypeOf(item)),
+                .default_value = @ptrCast(&item),
+                .is_comptime = true,
+                .name = std.fmt.comptimePrint("{}", .{index}),
+                .type = @TypeOf(item),
+            }};
+        }
 
-    if (index != list.info().fields.len)
-        struct_info.fields = struct_info.fields[0..index] ++ list.info().fields[index..];
+        const new_index = index2 + @intFromBool(index <= index2);
+        fields = fields ++ &[_]ItemInfo{.{
+            .alignment = @alignOf(@TypeOf(item2)),
+            .default_value = @ptrCast(&item2),
+            .is_comptime = true,
+            .name = std.fmt.comptimePrint("{}", .{new_index}),
+            .type = @TypeOf(item2),
+        }};
+    }
 
-    list.* = List{ .inner = @Type(.{ .Struct = struct_info }) };
+    if (list.size() == index) {
+        fields = fields ++ &[_]ItemInfo{.{
+            .alignment = @alignOf(@TypeOf(item)),
+            .default_value = @ptrCast(&item),
+            .is_comptime = true,
+            .name = std.fmt.comptimePrint("{}", .{index}),
+            .type = @TypeOf(item),
+        }};
+    }
+
+    list.* = List{ .inner = @Type(.{ .Struct = .{
+        .decls = &.{},
+        .fields = fields,
+        .is_tuple = true,
+        .layout = .auto,
+    } }) };
 }
 
 pub inline fn insertOrErr(list: *List, item: anytype, index: usize) InsertError!void {
@@ -106,7 +131,49 @@ pub inline fn insertOrErr(list: *List, item: anytype, index: usize) InsertError!
     list.insert(item, index);
 }
 
+pub inline fn append(list: *List, item: anytype) void {
+    list.insert(item, list.size());
+}
+
+pub inline fn prepend(list: *List, item: anytype) void {
+    list.insert(item, 0);
+}
+
 // == Testing ==
+test prepend {
+    comptime {
+        var list = List{};
+
+        list.prepend(7);
+        list.prepend(5);
+        list.prepend(3);
+        list.prepend(2);
+
+        t.compTry(std.testing.expectEqual(2, list.get(0)));
+        t.compTry(std.testing.expectEqual(3, list.get(1)));
+        t.compTry(std.testing.expectEqual(5, list.get(2)));
+        t.compTry(std.testing.expectEqual(7, list.get(3)));
+        t.compTry(std.testing.expectEqual(null, list.get(4)));
+    }
+}
+
+test append {
+    comptime {
+        var list = List{};
+
+        list.append(2);
+        list.append(3);
+        list.append(5);
+        list.append(7);
+
+        t.compTry(std.testing.expectEqual(2, list.get(0)));
+        t.compTry(std.testing.expectEqual(3, list.get(1)));
+        t.compTry(std.testing.expectEqual(5, list.get(2)));
+        t.compTry(std.testing.expectEqual(7, list.get(3)));
+        t.compTry(std.testing.expectEqual(null, list.get(4)));
+    }
+}
+
 test insert {
     comptime {
         var list = List{};
