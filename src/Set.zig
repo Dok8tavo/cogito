@@ -48,8 +48,8 @@ pub inline fn add(set: *Set, item: anytype) void {
     set.dict.add(item, {});
 }
 
-pub inline fn addOrErr(set: *Set, item: anytype) Dict.AddError!void {
-    try set.dict.addOrErr(item, {});
+pub inline fn addOrError(set: *Set, item: anytype) Dict.AddError!void {
+    try set.dict.addOrError(item, {});
 }
 
 pub inline fn addOrLeave(set: *Set, item: anytype) void {
@@ -57,7 +57,7 @@ pub inline fn addOrLeave(set: *Set, item: anytype) void {
 }
 
 pub inline fn addOrRemove(set: *Set, item: anytype) void {
-    set.addOrErr(item) catch set.remove(item);
+    set.addOrError(item) catch set.remove(item);
 }
 
 // == Removing items ==
@@ -65,8 +65,8 @@ pub inline fn remove(set: *Set, item: anytype) void {
     set.dict.remove(item);
 }
 
-pub inline fn removeOrErr(set: *Set, item: anytype) Dict.RemoveError!void {
-    try set.dict.removeOrErr(item);
+pub inline fn removeOrError(set: *Set, item: anytype) Dict.RemoveError!void {
+    try set.dict.removeOrError(item);
 }
 
 pub inline fn removeOrLeave(set: *Set, item: anytype) void {
@@ -84,7 +84,7 @@ pub inline fn combine(set1: Set, set2: Set) Set {
     return combine_set;
 }
 
-pub inline fn combineOrErr(set1: Set, set2: Set) Dict.AddError!Set {
+pub inline fn combineOrError(set1: Set, set2: Set) Dict.AddError!Set {
     if (!set1.isDisjoint(set2))
         return Dict.AddError.KeyAlreadyExists;
 
@@ -156,12 +156,12 @@ test add {
     }
 }
 
-test addOrErr {
+test addOrError {
     comptime {
         var set = Set{};
 
-        const not_err = set.addOrErr(.item);
-        const yes_err = set.addOrErr(.item);
+        const not_err = set.addOrError(.item);
+        const yes_err = set.addOrError(.item);
 
         t.compTry(std.testing.expectEqual({}, not_err));
         t.compTry(std.testing.expectEqual(Dict.AddError.KeyAlreadyExists, yes_err));
@@ -208,13 +208,13 @@ test remove {
     }
 }
 
-test removeOrErr {
+test removeOrError {
     comptime {
         var set = Set.from(.{.item});
         t.compTry(std.testing.expect(set.has(.item)));
 
-        const not_err = set.removeOrErr(.item);
-        const yes_err = set.removeOrErr(.item);
+        const not_err = set.removeOrError(.item);
+        const yes_err = set.removeOrError(.item);
 
         t.compTry(std.testing.expectEqual({}, not_err));
         t.compTry(std.testing.expectEqual(Dict.RemoveError.KeyDoesNotExist, yes_err));
@@ -260,22 +260,22 @@ test combine {
     }
 }
 
-test combineOrErr {
+test combineOrError {
     comptime {
         const set1 = Set.from(.{ .a, .b });
         const set2 = Set.from(.{ .b, .c });
         const set3 = Set.from(.{ .c, .d });
 
-        t.compTry(std.testing.expectError(Dict.AddError.KeyAlreadyExists, set1.combineOrErr(set2)));
+        t.compTry(std.testing.expectError(Dict.AddError.KeyAlreadyExists, set1.combineOrError(set2)));
 
-        const set4 = t.compTry(set1.combineOrErr(set3));
+        const set4 = t.compTry(set1.combineOrError(set3));
 
         t.compTry(std.testing.expect(set4.has(.a)));
         t.compTry(std.testing.expect(set4.has(.b)));
         t.compTry(std.testing.expect(set4.has(.c)));
         t.compTry(std.testing.expect(set4.has(.d)));
 
-        t.compTry(std.testing.expectError(Dict.AddError.KeyAlreadyExists, set2.combineOrErr(set3)));
+        t.compTry(std.testing.expectError(Dict.AddError.KeyAlreadyExists, set2.combineOrError(set3)));
     }
 }
 

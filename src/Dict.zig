@@ -87,7 +87,7 @@ pub inline fn get(dict: Dict, key: anytype) ?Get(dict, key) {
 // == Adding items ==
 pub const AddError = error{KeyAlreadyExists};
 
-pub inline fn addOrErr(dict: *Dict, key: anytype, value: anytype) AddError!void {
+pub inline fn addOrError(dict: *Dict, key: anytype, value: anytype) AddError!void {
     if (dict.has(key))
         return AddError.KeyAlreadyExists;
     dict.add(key, value);
@@ -99,7 +99,7 @@ pub inline fn addOrLeave(dict: *Dict, key: anytype, value: anytype) void {
 }
 
 pub inline fn addOrReplace(dict: *Dict, key: anytype, value: anytype) void {
-    dict.replaceOrErr(key, value) catch dict.add(key, value);
+    dict.replaceOrError(key, value) catch dict.add(key, value);
 }
 
 pub inline fn add(dict: *Dict, key: anytype, value: anytype) void {
@@ -132,7 +132,7 @@ pub inline fn remove(dict: *Dict, key: anytype) void {
     dict.inner = @Type(.{ .Struct = struct_info });
 }
 
-pub inline fn removeOrErr(dict: *Dict, key: anytype) RemoveError!void {
+pub inline fn removeOrError(dict: *Dict, key: anytype) RemoveError!void {
     if (!dict.has(key))
         return RemoveError.KeyDoesNotExist;
     dict.remove(key);
@@ -149,7 +149,7 @@ pub inline fn pop(dict: *Dict, key: anytype) Get(dict, key) {
     return @field(dict.inner{}, intoString(key));
 }
 
-pub inline fn popOrErr(dict: *Dict, key: anytype) RemoveError!Get(dict, key) {
+pub inline fn popOrError(dict: *Dict, key: anytype) RemoveError!Get(dict, key) {
     if (!dict.has(key))
         return RemoveError.KeyDoesNotExist;
     return dict.pop(key);
@@ -168,7 +168,7 @@ pub inline fn replace(dict: *Dict, key: anytype, value: anytype) void {
     dict.add(key, value);
 }
 
-pub inline fn replaceOrErr(dict: *Dict, key: anytype, value: anytype) RemoveError!void {
+pub inline fn replaceOrError(dict: *Dict, key: anytype, value: anytype) RemoveError!void {
     if (!dict.has(key))
         return RemoveError.KeyDoesNotExist;
     dict.replace(key, value);
@@ -272,11 +272,11 @@ test add {
     }
 }
 
-test addOrErr {
+test addOrError {
     comptime {
         var dict = Dict.from(.{ .key1 = 1 });
-        const add_key1 = dict.addOrErr(.key1, 2); // this is an error
-        const add_key2 = dict.addOrErr(.key2, 3); // this isn't
+        const add_key1 = dict.addOrError(.key1, 2); // this is an error
+        const add_key2 = dict.addOrError(.key2, 3); // this isn't
 
         t.compTry(std.testing.expectError(AddError.KeyAlreadyExists, add_key1));
         t.compTry(std.testing.expectEqual(void{}, add_key2));
@@ -318,15 +318,15 @@ test remove {
     }
 }
 
-test removeOrErr {
+test removeOrError {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
         t.compTry(std.testing.expect(@hasField(dict.inner, "key")));
         t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
 
-        const remove_key = dict.removeOrErr(.key);
-        const remove_not_key = dict.removeOrErr(.not_key);
+        const remove_key = dict.removeOrError(.key);
+        const remove_not_key = dict.removeOrError(.not_key);
 
         t.compTry(std.testing.expect(!@hasField(dict.inner, "key")));
         t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
@@ -361,15 +361,15 @@ test replace {
     }
 }
 
-test replaceOrErr {
+test replaceOrError {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
         t.compTry(std.testing.expectEqual(1, (dict.inner{}).key));
         t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
 
-        const replace_key = dict.replaceOrErr(.key, 2);
-        const replace_not_key = dict.replaceOrErr(.not_key, 2);
+        const replace_key = dict.replaceOrError(.key, 2);
+        const replace_not_key = dict.replaceOrError(.not_key, 2);
 
         t.compTry(std.testing.expectEqual(2, (dict.inner{}).key));
         t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
@@ -426,11 +426,11 @@ test pop {
     }
 }
 
-test popOrErr {
+test popOrError {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
-        t.compTry(std.testing.expectEqual(1, dict.popOrErr(.key)));
-        t.compTry(std.testing.expectError(RemoveError.KeyDoesNotExist, dict.popOrErr(.key)));
+        t.compTry(std.testing.expectEqual(1, dict.popOrError(.key)));
+        t.compTry(std.testing.expectError(RemoveError.KeyDoesNotExist, dict.popOrError(.key)));
     }
 }
 

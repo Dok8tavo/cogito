@@ -126,7 +126,7 @@ pub inline fn insert(list: *List, item: anytype, index: usize) void {
     } }) };
 }
 
-pub inline fn insertOrErr(list: *List, item: anytype, index: usize) IndexError!void {
+pub inline fn insertOrError(list: *List, item: anytype, index: usize) IndexError!void {
     if (list.size() < index)
         return IndexError.IndexOutOfBounds;
     list.insert(item, index);
@@ -153,14 +153,14 @@ pub inline fn remove(list: *List, index: usize) void {
     list.* = List{ .inner = @Type(.{ .Struct = new_info }) };
 }
 
-pub inline fn removeOrErr(list: *List, index: usize) IndexError!void {
+pub inline fn removeOrError(list: *List, index: usize) IndexError!void {
     if (list.size() <= index)
         return IndexError.IndexOutOfBounds;
     list.remove(index);
 }
 
 pub inline fn removeOrLeave(list: *List, index: usize) void {
-    list.removeOrErr(index) catch {};
+    list.removeOrError(index) catch {};
 }
 
 // == Combine lists ==
@@ -172,12 +172,12 @@ pub inline fn concat(list: List, other: List) List {
 }
 
 // == Testing ==
-test removeOrErr {
+test removeOrError {
     comptime {
         var list = List.from(.{ 'a', 'b', 'c' });
 
-        const remove1 = list.removeOrErr(2);
-        const remove2 = list.removeOrErr(2);
+        const remove1 = list.removeOrError(2);
+        const remove2 = list.removeOrError(2);
 
         t.compTry(std.testing.expectEqualDeep({}, remove1));
         t.compTry(std.testing.expectEqualDeep(IndexError.IndexOutOfBounds, remove2));
@@ -281,16 +281,16 @@ test get {
     }
 }
 
-test insertOrErr {
+test insertOrError {
     comptime {
         var list = List.from(.{});
 
         t.compTry(std.testing.expectError(
             IndexError.IndexOutOfBounds,
-            list.insertOrErr("Index is out of bounds!", 10_000),
+            list.insertOrError("Index is out of bounds!", 10_000),
         ));
 
-        t.compTry(list.insertOrErr("Index isn't out of bounds!", 0));
+        t.compTry(list.insertOrError("Index isn't out of bounds!", 0));
         t.compTry(std.testing.expectEqualStrings(
             "Index isn't out of bounds!",
             @field(list.inner{}, "0"),
