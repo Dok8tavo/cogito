@@ -82,6 +82,37 @@ pub inline fn get(list: List, index: usize) ?Get(list, index) {
         null;
 }
 
+// == Setting items ==
+pub inline fn set(list: *List, index: usize, value: anytype) void {
+    var new_info = list.info();
+    new_info.fields = if (index != 0) list.info().fields[0..index] else &.{};
+    new_info.fields = new_info.fields ++ &[_]ItemInfo{.{
+        .alignment = @alignOf(@TypeOf(value)),
+        .default_value = @ptrCast(&value),
+        .is_comptime = true,
+        .name = std.fmt.comptimePrint("{}", .{index}),
+        .type = @TypeOf(value),
+    }};
+
+    if (index + 1 != list.size())
+        new_info.fields = new_info.fields ++ list.info().fields[index + 1 ..];
+
+    list.* = List{ .inner = @Type(.{ .Struct = new_info }) };
+}
+
+pub inline fn setOrError(list: *List, index: usize, value: anytype) IndexError!void {
+    if (list.size() <= index)
+        return IndexError.IndexOutOfBounds;
+    list.set(index, value);
+}
+
+pub inline fn getSet(list: *List, index: usize, value: anytype) ?Get(list.*, index) {
+    return if (list.get(index)) |old_value| {
+        list.set(index, value);
+        return old_value;
+    } else null;
+}
+
 // == Popping items ==
 pub inline fn Pop(list: *const List) type {
     return if (list.size() == 0) t.NoReturn else list.Get(list.size() - 1);
@@ -96,7 +127,6 @@ pub inline fn pop(list: *List) ?Pop(list) {
 }
 
 // == Inserting items ==
-
 pub inline fn insert(list: *List, item: anytype, index: usize) void {
     var fields: []const ItemInfo = &.{};
 
@@ -185,6 +215,33 @@ pub inline fn concat(list: List, other: List) List {
 }
 
 // == Testing ==
+test getSet {
+    comptime {
+        var list = List.from(.{ .hello, .world });
+        const hello = list.getSet(0, .goodbye);
+
+        t.compTry(std.testing.expectEqual(.hello, hello));
+        t.compTry(std.testing.expectEqualDeep(.{ .goodbye, .world }, list.inner{}));
+    }
+}
+
+test setOrError {
+    comptime {
+        var list = List.from(.{ 0, 1, 2 });
+        const set_or_err = list.setOrError(3, "This isn't right!");
+        t.compTry(std.testing.expectError(IndexError.IndexOutOfBounds, set_or_err));
+    }
+}
+
+test set {
+    comptime {
+        var list = List.from(.{ 'l', 'o', 'u' });
+        list.set(2, "l");
+
+        t.compTry(std.testing.expectEqualDeep(.{ 'l', 'o', "l" }, list.inner{}));
+    }
+}
+
 test pop {
     const expect = std.testing.expectEqualDeep;
     comptime {

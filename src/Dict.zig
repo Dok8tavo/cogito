@@ -162,7 +162,7 @@ pub inline fn popOrLeave(dict: *Dict, key: anytype) ?Get(dict, key) {
         null;
 }
 
-// == Replacing items ==
+// == Setting items ==
 pub inline fn set(dict: *Dict, key: anytype, value: anytype) void {
     dict.remove(key);
     dict.add(key, value);
