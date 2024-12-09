@@ -99,7 +99,7 @@ pub inline fn addOrLeave(dict: *Dict, key: anytype, value: anytype) void {
 }
 
 pub inline fn addOrReplace(dict: *Dict, key: anytype, value: anytype) void {
-    dict.replaceOrError(key, value) catch dict.add(key, value);
+    dict.setOrError(key, value) catch dict.add(key, value);
 }
 
 pub inline fn add(dict: *Dict, key: anytype, value: anytype) void {
@@ -163,20 +163,20 @@ pub inline fn popOrLeave(dict: *Dict, key: anytype) ?Get(dict, key) {
 }
 
 // == Replacing items ==
-pub inline fn replace(dict: *Dict, key: anytype, value: anytype) void {
+pub inline fn set(dict: *Dict, key: anytype, value: anytype) void {
     dict.remove(key);
     dict.add(key, value);
 }
 
-pub inline fn replaceOrError(dict: *Dict, key: anytype, value: anytype) RemoveError!void {
+pub inline fn setOrError(dict: *Dict, key: anytype, value: anytype) RemoveError!void {
     if (!dict.has(key))
         return RemoveError.KeyDoesNotExist;
-    dict.replace(key, value);
+    dict.set(key, value);
 }
 
-pub inline fn replaceOrLeave(dict: *Dict, key: anytype, value: anytype) void {
+pub inline fn setOrLeave(dict: *Dict, key: anytype, value: anytype) void {
     if (dict.has(key))
-        dict.replace(key, value);
+        dict.set(key, value);
 }
 
 // == Iterating ==
@@ -351,43 +351,43 @@ test removeOrLeave {
     }
 }
 
-test replace {
+test set {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
         t.compTry(std.testing.expectEqual(1, (dict.inner{}).key));
-        dict.replace(.key, "not even a `comptime_int`");
+        dict.set(.key, "not even a `comptime_int`");
         t.compTry(std.testing.expectEqualStrings("not even a `comptime_int`", (dict.inner{}).key));
     }
 }
 
-test replaceOrError {
+test setOrError {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
         t.compTry(std.testing.expectEqual(1, (dict.inner{}).key));
         t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
 
-        const replace_key = dict.replaceOrError(.key, 2);
-        const replace_not_key = dict.replaceOrError(.not_key, 2);
+        const set_key = dict.setOrError(.key, 2);
+        const set_not_key = dict.setOrError(.not_key, 2);
 
         t.compTry(std.testing.expectEqual(2, (dict.inner{}).key));
         t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
 
-        t.compTry(std.testing.expectEqual(void{}, replace_key));
-        t.compTry(std.testing.expectError(RemoveError.KeyDoesNotExist, replace_not_key));
+        t.compTry(std.testing.expectEqual(void{}, set_key));
+        t.compTry(std.testing.expectError(RemoveError.KeyDoesNotExist, set_not_key));
     }
 }
 
-test replaceOrLeave {
+test setOrLeave {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
         t.compTry(std.testing.expectEqual(1, (dict.inner{}).key));
         t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
 
-        dict.replaceOrLeave(.key, 2);
-        dict.replaceOrLeave(.not_key, 2);
+        dict.setOrLeave(.key, 2);
+        dict.setOrLeave(.not_key, 2);
 
         t.compTry(std.testing.expectEqual(2, (dict.inner{}).key));
         t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
