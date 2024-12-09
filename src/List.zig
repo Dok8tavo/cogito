@@ -215,13 +215,14 @@ pub inline fn concat(list: List, other: List) List {
 }
 
 // == Testing ==
+const expect = std.testing.expectEqualDeep;
 test getSet {
     comptime {
         var list = List.from(.{ .hello, .world });
         const hello = list.getSet(0, .goodbye);
 
-        t.compTry(std.testing.expectEqual(.hello, hello));
-        t.compTry(std.testing.expectEqualDeep(.{ .goodbye, .world }, list.inner{}));
+        t.compTry(expect(.hello, hello));
+        t.compTry(expect(.{ .goodbye, .world }, list.inner{}));
     }
 }
 
@@ -229,7 +230,7 @@ test setOrError {
     comptime {
         var list = List.from(.{ 0, 1, 2 });
         const set_or_err = list.setOrError(3, "This isn't right!");
-        t.compTry(std.testing.expectError(IndexError.IndexOutOfBounds, set_or_err));
+        t.compTry(expect(IndexError.IndexOutOfBounds, set_or_err));
     }
 }
 
@@ -238,12 +239,11 @@ test set {
         var list = List.from(.{ 'l', 'o', 'u' });
         list.set(2, "l");
 
-        t.compTry(std.testing.expectEqualDeep(.{ 'l', 'o', "l" }, list.inner{}));
+        t.compTry(expect(.{ 'l', 'o', "l" }, list.inner{}));
     }
 }
 
 test pop {
-    const expect = std.testing.expectEqualDeep;
     comptime {
         var list = List.from(.{ 3, 10, 5, 16, 8, 4, 2, 1, 4, 2, 1 });
 
@@ -269,8 +269,8 @@ test removeOrError {
         const remove1 = list.removeOrError(2);
         const remove2 = list.removeOrError(2);
 
-        t.compTry(std.testing.expectEqualDeep({}, remove1));
-        t.compTry(std.testing.expectEqualDeep(IndexError.IndexOutOfBounds, remove2));
+        t.compTry(expect({}, remove1));
+        t.compTry(expect(IndexError.IndexOutOfBounds, remove2));
     }
 }
 
@@ -279,10 +279,10 @@ test removeOrLeave {
         var list = List.from(.{ .a, .b, .c });
 
         list.removeOrLeave(2);
-        t.compTry(std.testing.expectEqualDeep(.{ .a, .b }, list.inner{}));
+        t.compTry(expect(.{ .a, .b }, list.inner{}));
 
         list.removeOrLeave(2);
-        t.compTry(std.testing.expectEqualDeep(.{ .a, .b }, list.inner{}));
+        t.compTry(expect(.{ .a, .b }, list.inner{}));
     }
 }
 
@@ -291,10 +291,10 @@ test remove {
         var list = List.from(.{ "Hello", "How", "are", "you" });
 
         list.remove(2);
-        t.compTry(std.testing.expectEqualDeep(.{ "Hello", "How", "you" }, list.inner{}));
+        t.compTry(expect(.{ "Hello", "How", "you" }, list.inner{}));
 
         list.remove(1);
-        t.compTry(std.testing.expectEqualDeep(.{ "Hello", "you" }, list.inner{}));
+        t.compTry(expect(.{ "Hello", "you" }, list.inner{}));
     }
 }
 
@@ -304,7 +304,7 @@ test concat {
         const list2 = List.from(.{ "viva", "l'Algérie" });
         const list3 = list1.concat(list2);
 
-        t.compTry(std.testing.expectEqualDeep(
+        t.compTry(expect(
             list3.inner{},
             .{ 1, 2, 3, "viva", "l'Algérie" },
         ));
@@ -320,11 +320,11 @@ test prepend {
         list.prepend(3);
         list.prepend(2);
 
-        t.compTry(std.testing.expectEqual(2, list.get(0)));
-        t.compTry(std.testing.expectEqual(3, list.get(1)));
-        t.compTry(std.testing.expectEqual(5, list.get(2)));
-        t.compTry(std.testing.expectEqual(7, list.get(3)));
-        t.compTry(std.testing.expectEqual(null, list.get(4)));
+        t.compTry(expect(2, list.get(0)));
+        t.compTry(expect(3, list.get(1)));
+        t.compTry(expect(5, list.get(2)));
+        t.compTry(expect(7, list.get(3)));
+        t.compTry(expect(null, list.get(4)));
     }
 }
 
@@ -337,26 +337,22 @@ test append {
         list.append(5);
         list.append(7);
 
-        t.compTry(std.testing.expectEqual(2, list.get(0)));
-        t.compTry(std.testing.expectEqual(3, list.get(1)));
-        t.compTry(std.testing.expectEqual(5, list.get(2)));
-        t.compTry(std.testing.expectEqual(7, list.get(3)));
-        t.compTry(std.testing.expectEqual(null, list.get(4)));
+        t.compTry(expect(2, list.get(0)));
+        t.compTry(expect(3, list.get(1)));
+        t.compTry(expect(5, list.get(2)));
+        t.compTry(expect(7, list.get(3)));
+        t.compTry(expect(null, list.get(4)));
     }
 }
 
 test insert {
     comptime {
         var list = List{};
-        t.compTry(std.testing.expect(!@hasField(list.inner, "0")));
+        t.compTry(expect(.{}, list.inner{}));
 
         list.insert("Hello world!", 0);
 
-        t.compTry(std.testing.expect(@hasField(list.inner, "0")));
-        t.compTry(std.testing.expectEqualStrings(
-            "Hello world!",
-            @field(list.inner{}, "0"),
-        ));
+        t.compTry(expect(.{"Hello world!"}, list.inner{}));
     }
 }
 
@@ -364,11 +360,11 @@ test get {
     comptime {
         const list = List.from(.{ 2, 3, 5, 7 });
 
-        t.compTry(std.testing.expectEqual(2, list.get(0)));
-        t.compTry(std.testing.expectEqual(3, list.get(1)));
-        t.compTry(std.testing.expectEqual(5, list.get(2)));
-        t.compTry(std.testing.expectEqual(7, list.get(3)));
-        t.compTry(std.testing.expectEqual(null, list.get(4)));
+        t.compTry(expect(2, list.get(0)));
+        t.compTry(expect(3, list.get(1)));
+        t.compTry(expect(5, list.get(2)));
+        t.compTry(expect(7, list.get(3)));
+        t.compTry(expect(null, list.get(4)));
     }
 }
 
@@ -376,16 +372,13 @@ test insertOrError {
     comptime {
         var list = List.from(.{});
 
-        t.compTry(std.testing.expectError(
+        t.compTry(expect(
             IndexError.IndexOutOfBounds,
             list.insertOrError("Index is out of bounds!", 10_000),
         ));
 
         t.compTry(list.insertOrError("Index isn't out of bounds!", 0));
-        t.compTry(std.testing.expectEqualStrings(
-            "Index isn't out of bounds!",
-            @field(list.inner{}, "0"),
-        ));
+        t.compTry(expect(.{"Index isn't out of bounds!"}, list.inner{}));
     }
 }
 
