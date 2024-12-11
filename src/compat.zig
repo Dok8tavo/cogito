@@ -297,16 +297,16 @@ pub const TypeInfo = union(enum) {
                 return ParamInfo{
                     .param_is_generic = std_info.is_generic,
                     .param_is_noalias = std_info.is_noalias,
-                    .param_type = @field(std_info, "type"),
+                    .param_type = std_info.type,
                 };
             }
 
             pub inline fn intoStd(info: ParamInfo) StdType.Fn.Param {
-                var std_info: StdType.Fn.Param = undefined;
-                std_info.is_generic = info.param_is_generic;
-                std_info.is_noalias = info.param_is_noalias;
-                @field(std_info, "type") = info.param_type;
-                return std_info;
+                return StdType.Fn.Param{
+                    .is_generic = info.is_generic,
+                    .is_noalias = info.is_noalias,
+                    .type = info.type,
+                };
             }
         };
 
@@ -437,16 +437,16 @@ pub const TypeInfo = union(enum) {
                 return VariantInfo{
                     .variant_alignment = std_info.alignment,
                     .variant_name = std_info.name,
-                    .variant_type = @field(std_info, "type"),
+                    .variant_type = std_info.type,
                 };
             }
 
             pub inline fn intoStd(info: VariantInfo) StdType.UnionField {
-                var std_info: StdType.UnionField = undefined;
-                std_info.alignment = info.variant_alignment orelse @alignOf(info.variant_type);
-                std_info.name = info.variant_name ++ "\x00";
-                @field(std_info, "type") = info.variant_type;
-                return std_info;
+                return StdType.UnionField{
+                    .alignment = info.alignment,
+                    .name = info.name,
+                    .type = info.type,
+                };
             }
         };
     };
@@ -499,18 +499,18 @@ pub const TypeInfo = union(enum) {
                     .field_default_value = std_info.default_value,
                     .field_is_comptime = std_info.is_comptime,
                     .field_name = std_info.name,
-                    .field_type = @field(std_info, "type"),
+                    .field_type = std_info.type,
                 };
             }
 
             pub inline fn intoStd(info: FieldInfo) StdType.StructField {
-                var std_info: StdType.StructField = undefined;
-                std_info.alignment = info.field_alignment orelse @alignOf(info.field_type);
-                std_info.default_value = info.field_default_value;
-                std_info.is_comptime = info.field_is_comptime;
-                std_info.name = info.field_name ++ "\x00";
-                @field(std_info, "type") = info.field_type;
-                return std_info;
+                return StdType.StructField{
+                    .alignment = info.field_alignment orelse @alignOf(info.field_type),
+                    .default_value = info.field_default_value,
+                    .is_comptime = info.field_is_comptime,
+                    .name = info.field_name ++ "\x00",
+                    .type = info.field_type,
+                };
             }
         };
     };
