@@ -21,6 +21,7 @@
 // SOFTWARE.
 //
 
+const compat = @import("compat.zig");
 const std = @import("std");
 
 pub const NoReturn = enum {};
@@ -30,17 +31,19 @@ pub inline fn compileError(fmt: []const u8, args: anytype) noreturn {
 }
 
 pub inline fn Payload(error_union: anytype) type {
-    return switch (@typeInfo(@TypeOf(error_union))) {
-        .ErrorUnion => |eu| eu.payload,
-        .ErrorSet => NoReturn,
+    const info = compat.typeInfo(@TypeOf(error_union));
+    return switch (info) {
+        .error_union_info => |eu| eu.payload,
+        .error_set_info => NoReturn,
         else => unreachable,
     };
 }
 
 pub inline fn ErrorSet(error_union: anytype) type {
-    return switch (@typeInfo(@TypeOf(error_union))) {
-        .ErrorUnion => |eu| eu.error_set,
-        .ErrorSet => @TypeOf(error_union),
+    const info = compat.typeInfo(@TypeOf(error_union));
+    return switch (info) {
+        .error_union_info => |eu| eu.error_set,
+        .error_set_info => @TypeOf(error_union),
         else => NoReturn,
     };
 }
