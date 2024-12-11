@@ -238,14 +238,14 @@ pub const Iterator = struct {
         return if (iterator.dict.size() <= iterator.index)
             t.NoReturn
         else
-            struct { [:0]const u8, iterator.dict.info().fields[iterator.index].field_type };
+            struct { []const u8, iterator.dict.info().fields[iterator.index].field_type };
     }
 
     pub inline fn peek(iterator: Iterator) ?Peek(iterator) {
         if (iterator.dict.size() <= iterator.index) return null;
 
         const key = iterator.dict.info().fields[iterator.index].field_name;
-        return .{ key ++ "\x00", @field((iterator.dict.inner{}), key) };
+        return .{ key, @field((iterator.dict.inner{}), key) };
     }
 
     pub inline fn next(iterator: *Iterator) ?Peek(iterator.*) {
