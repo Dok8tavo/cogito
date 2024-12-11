@@ -490,15 +490,25 @@ pub const TypeInfo = union(enum) {
             field_alignment: ?u16 = null,
             field_default_value: ?*const anyopaque = null,
             field_is_comptime: bool = false,
-            field_name: [:0]const u8,
+            field_name: []const u8,
             field_type: type,
+
+            pub inline fn fromStd(std_info: StdType.StructField) FieldInfo {
+                return FieldInfo{
+                    .field_alignment = std_info.alignment,
+                    .field_default_value = std_info.default_value,
+                    .field_is_comptime = std_info.is_comptime,
+                    .field_name = std_info.name,
+                    .field_type = @field(std_info, "type"),
+                };
+            }
 
             pub inline fn intoStd(info: FieldInfo) StdType.StructField {
                 var std_info: StdType.StructField = undefined;
                 std_info.alignment = info.field_alignment orelse @alignOf(info.field_type);
                 std_info.default_value = info.field_default_value;
                 std_info.is_comptime = info.field_is_comptime;
-                std_info.name = info.field_name;
+                std_info.name = info.field_name ++ "\x00";
                 @field(std_info, "type") = info.field_type;
                 return std_info;
             }

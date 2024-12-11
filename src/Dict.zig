@@ -21,27 +21,26 @@
 // SOFTWARE.
 //
 
-inner: type = @Type(.{ .Struct = .{
-    .fields = &.{},
-    .decls = &.{},
-    .is_tuple = false,
-    .layout = .auto,
-} }),
+inner: type = compat.Type(.{ .struct_info = .{} }),
 
+const compat = @import("compat.zig");
 const std = @import("std");
 const t = @import("testing.zig");
 
-const KeyValueInfo = std.builtin.Type.StructField;
+const KeyValueInfo = compat.TypeInfo.StructInfo.FieldInfo;
 const Dict = @This();
 
 pub inline fn from(kv_struct: anytype) Dict {
     const KVStruct = @TypeOf(kv_struct);
-    const kv_info = @typeInfo(KVStruct);
+    const kv_info = compat.typeInfo(KVStruct);
 
-    var kv_struct_info = if (kv_info == .Struct) kv_info.Struct else t.compileError(
-        "A dict must be made from a `.Struct`, not a `.{s}` like `{s}`!",
-        .{ @tagName(kv_info), @typeName(KVStruct) },
-    );
+    var kv_struct_info = switch (kv_info) {
+        .struct_info => |struct_info| struct_info,
+        else => t.compileError(
+            "A dict must be made from a `.Struct`, not a `.{s}` like `{s}`!",
+            .{ @tagName(kv_info.intoStd()), @typeName(KVStruct) },
+        ),
+    };
 
     if (kv_struct_info.is_tuple) t.compileError(
         "A dict must be made from a struct, not a tuple like `{s}`!",
@@ -51,7 +50,6 @@ pub inline fn from(kv_struct: anytype) Dict {
     var fields: []const KeyValueInfo = &.{};
     for (kv_struct_info.fields) |field| {
         fields = fields ++ &[_]KeyValueInfo{.{
-            .alignment = field.alignment,
             .default_value = @ptrCast(&@field(kv_struct, field.name)),
             .is_comptime = true,
             .name = field.name,
@@ -61,7 +59,7 @@ pub inline fn from(kv_struct: anytype) Dict {
 
     kv_struct_info.fields = fields;
 
-    return Dict{ .inner = @Type(kv_info) };
+    return Dict{ .inner = compat.Type(kv_info) };
 }
 
 pub inline fn size(dict: Dict) usize {
@@ -106,14 +104,13 @@ pub inline fn add(dict: *Dict, key: anytype, value: anytype) void {
     const Value = @TypeOf(value);
     var struct_info = dict.info();
     struct_info.fields = dict.info().fields ++ &[_]KeyValueInfo{.{
-        .alignment = @alignOf(Value),
-        .name = intoString(key) ++ "\x00",
+        .name = intoString(key),
         .default_value = @ptrCast(&value),
         .is_comptime = true,
         .type = Value,
     }};
 
-    dict.inner = @Type(.{ .Struct = struct_info });
+    dict.inner = compat.Type(.{ .struct_info = struct_info });
 }
 
 // == Removing items ==
@@ -129,7 +126,7 @@ pub inline fn remove(dict: *Dict, key: anytype) void {
         }
     } else struct_info.fields = dict.info().fields[0..new_length];
 
-    dict.inner = @Type(.{ .Struct = struct_info });
+    dict.inner = compat.Type(.{ .struct_info = struct_info });
 }
 
 pub inline fn removeOrError(dict: *Dict, key: anytype) RemoveError!void {
@@ -565,11 +562,11 @@ inline fn intoString(comptime any: anytype) []const u8 {
     switch (Any) {
         []const u8, []u8, [:0]const u8, [:0]u8 => return any,
         @TypeOf(.enum_literal) => return @tagName(any),
-        else => if (@typeInfo(Any) == .Pointer) {
-            const pointer_info = @typeInfo(Any).Pointer;
+        else => if (compat.typeInfo(Any) == .pointer_info) {
+            const pointer_info = compat.typeInfo(Any).pointer_info;
             if (pointer_info.size == .One) {
-                const child_info = @typeInfo(pointer_info.child);
-                if (child_info == .Array and child_info.Array.child == u8)
+                const child_info = compat.typeInfo(pointer_info.child);
+                if (child_info == .array_info and child_info.array_info.child == u8)
                     return any;
             }
         },
@@ -578,6 +575,6 @@ inline fn intoString(comptime any: anytype) []const u8 {
     t.compileError("Can't convert `{s}` into a string!", .{@typeName(Any)});
 }
 
-inline fn info(comptime dict: Dict) std.builtin.Type.Struct {
-    return @typeInfo(dict.inner).Struct;
+inline fn info(comptime dict: Dict) compat.TypeInfo.StructInfo {
+    return compat.typeInfo(dict.inner).struct_info;
 }
