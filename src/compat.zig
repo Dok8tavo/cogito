@@ -112,7 +112,7 @@ pub const TypeInfo = union(enum) {
     }
 
     pub inline fn intoStd(info: TypeInfo) StdType {
-        return eitherUnionVariant(StdType, switch (info) {
+        return eitherUnionVariant(StdType, &switch (info) {
             .type_info => .{ "type", "Type" },
             .void_info => .{ "void", "Void" },
             .bool_info => .{ "bool", "Bool" },
@@ -461,7 +461,7 @@ pub const TypeInfo = union(enum) {
         pub inline fn fromStd(std_info: StdType.Struct) StructInfo {
             var fields: []const FieldInfo = &.{};
             for (std_info.fields) |field|
-                fields = fields ++ FieldInfo.fromStd(field);
+                fields = fields ++ &[_]FieldInfo{FieldInfo.fromStd(field)};
             return StructInfo{
                 .backing_integer = std_info.backing_integer,
                 .decls = std_info.decls,
@@ -620,7 +620,7 @@ fn selectVariant(SumType: type, variants: []const []const u8) []const u8 {
 }
 
 fn eitherEnumVariant(Enum: type, variants: []const []const u8) Enum {
-    return @field(Enum, selectVariant(variants));
+    return @field(Enum, selectVariant(Enum, variants));
 }
 
 fn eitherUnionVariant(Union: type, variants: []const []const u8, payload: anytype) Union {
@@ -635,10 +635,11 @@ fn eitherUnionAccess(
 }
 
 fn EitherUnionAccess(Union: type, variants: []const []const u8) type {
-    return @TypeOf(@field(@as(Union, undefined), selectVariant(variants)));
+    return @TypeOf(@field(@as(Union, undefined), selectVariant(Union, variants)));
 }
 
 fn isEither(value: anytype, variants: []const []const u8) bool {
+    @setEvalBranchQuota(2000);
     return for (variants) |variant| {
         if (std.mem.eql(u8, @tagName(value), variant)) break true;
     } else false;

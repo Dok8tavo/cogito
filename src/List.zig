@@ -21,29 +21,28 @@
 // SOFTWARE.
 //
 
-inner: type = @Type(.{ .Struct = .{
-    .decls = &.{},
-    .fields = &.{},
-    .is_tuple = true,
-    .layout = .auto,
-} }),
+inner: type = compat.Type(.{ .struct_info = .{ .is_tuple = true } }),
 
+const compat = @import("compat.zig");
 const t = @import("testing.zig");
 const std = @import("std");
 
 const List = @This();
-const ItemInfo = std.builtin.Type.StructField;
+const ItemInfo = compat.TypeInfo.StructInfo.FieldInfo;
 
 pub const IndexError = error{IndexOutOfBounds};
 
 pub inline fn from(tuple: anytype) List {
     const Tuple = @TypeOf(tuple);
-    const tuple_info = @typeInfo(Tuple);
+    const tuple_info = compat.typeInfo(Tuple);
 
-    var tuple_struct_info = if (tuple_info == .Struct) tuple_info.Struct else t.compileError(
-        "A list must be made from a `.Struct`, not a `.{s}` like `{s}`!",
-        .{ @tagName(tuple_info), @typeName(Tuple) },
-    );
+    var tuple_struct_info = if (tuple_info == .struct_info)
+        tuple_info.struct_info
+    else
+        t.compileError(
+            "A list must be made from a `.Struct`, not a `.{s}` like `{s}`!",
+            .{ @tagName(tuple_info.intoStd()), @typeName(Tuple) },
+        );
 
     if (!tuple_struct_info.is_tuple) t.compileError(
         "A list must be made from a tuple, not a struct like `{s}`!",
@@ -53,17 +52,16 @@ pub inline fn from(tuple: anytype) List {
     var fields: []const ItemInfo = &.{};
     for (tuple_struct_info.fields) |field| {
         fields = fields ++ &[_]ItemInfo{.{
-            .alignment = field.alignment,
-            .default_value = @ptrCast(&@field(tuple, field.name)),
-            .is_comptime = true,
-            .name = field.name,
-            .type = field.type,
+            .field_default_value = @ptrCast(&@field(tuple, field.field_name)),
+            .field_is_comptime = true,
+            .field_name = field.field_name,
+            .field_type = field.field_type,
         }};
     }
 
     tuple_struct_info.fields = fields;
 
-    return List{ .inner = @Type(tuple_info) };
+    return List{ .inner = compat.Type(tuple_info) };
 }
 
 pub inline fn size(list: List) usize {
@@ -72,12 +70,12 @@ pub inline fn size(list: List) usize {
 
 // == Accessing items ==
 pub inline fn Get(list: List, index: usize) type {
-    return if (index < list.size()) list.info().fields[index].type else t.NoReturn;
+    return if (index < list.size()) list.info().fields[index].field_type else t.NoReturn;
 }
 
 pub inline fn get(list: List, index: usize) ?Get(list, index) {
     return if (index < list.size())
-        @field(list.inner{}, list.info().fields[index].name)
+        @field(list.inner{}, list.info().fields[index].field_name)
     else
         null;
 }
@@ -87,17 +85,16 @@ pub inline fn set(list: *List, index: usize, value: anytype) void {
     var new_info = list.info();
     new_info.fields = if (index != 0) list.info().fields[0..index] else &.{};
     new_info.fields = new_info.fields ++ &[_]ItemInfo{.{
-        .alignment = @alignOf(@TypeOf(value)),
-        .default_value = @ptrCast(&value),
-        .is_comptime = true,
-        .name = std.fmt.comptimePrint("{}", .{index}),
-        .type = @TypeOf(value),
+        .field_default_value = @ptrCast(&value),
+        .field_is_comptime = true,
+        .field_name = std.fmt.comptimePrint("{}", .{index}),
+        .field_type = @TypeOf(value),
     }};
 
     if (index + 1 != list.size())
         new_info.fields = new_info.fields ++ list.info().fields[index + 1 ..];
 
-    list.* = List{ .inner = @Type(.{ .Struct = new_info }) };
+    list.* = List{ .inner = compat.Type(.{ .struct_info = new_info }) };
 }
 
 pub inline fn setOrError(list: *List, index: usize, value: anytype) IndexError!void {
@@ -133,39 +130,34 @@ pub inline fn insert(list: *List, item: anytype, index: usize) void {
     for (list.inner{}, 0..) |item2, index2| {
         if (index2 == index) {
             fields = fields ++ &[_]ItemInfo{.{
-                .alignment = @alignOf(@TypeOf(item)),
-                .default_value = @ptrCast(&item),
-                .is_comptime = true,
-                .name = std.fmt.comptimePrint("{}", .{index}),
-                .type = @TypeOf(item),
+                .field_default_value = @ptrCast(&item),
+                .field_is_comptime = true,
+                .field_name = std.fmt.comptimePrint("{}", .{index}),
+                .field_type = @TypeOf(item),
             }};
         }
 
         const new_index = index2 + @intFromBool(index <= index2);
         fields = fields ++ &[_]ItemInfo{.{
-            .alignment = @alignOf(@TypeOf(item2)),
-            .default_value = @ptrCast(&item2),
-            .is_comptime = true,
-            .name = std.fmt.comptimePrint("{}", .{new_index}),
-            .type = @TypeOf(item2),
+            .field_default_value = @ptrCast(&item2),
+            .field_is_comptime = true,
+            .field_name = std.fmt.comptimePrint("{}", .{new_index}),
+            .field_type = @TypeOf(item2),
         }};
     }
 
     if (list.size() == index) {
         fields = fields ++ &[_]ItemInfo{.{
-            .alignment = @alignOf(@TypeOf(item)),
-            .default_value = @ptrCast(&item),
-            .is_comptime = true,
-            .name = std.fmt.comptimePrint("{}", .{index}),
-            .type = @TypeOf(item),
+            .field_default_value = @ptrCast(&item),
+            .field_is_comptime = true,
+            .field_name = std.fmt.comptimePrint("{}", .{index}),
+            .field_type = @TypeOf(item),
         }};
     }
 
-    list.* = List{ .inner = @Type(.{ .Struct = .{
-        .decls = &.{},
+    list.* = List{ .inner = compat.Type(.{ .struct_info = .{
         .fields = fields,
         .is_tuple = true,
-        .layout = .auto,
     } }) };
 }
 
@@ -189,11 +181,11 @@ pub inline fn remove(list: *List, index: usize) void {
     new_info.fields = if (index != 0) new_info.fields[0..index] else &.{};
     for (index + 1..list.size()) |index2| {
         var field = list.info().fields[index2];
-        field.name = std.fmt.comptimePrint("{}", .{index2 - 1});
+        field.field_name = std.fmt.comptimePrint("{}", .{index2 - 1});
         new_info.fields = new_info.fields ++ &[_]ItemInfo{field};
     }
 
-    list.* = List{ .inner = @Type(.{ .Struct = new_info }) };
+    list.* = List{ .inner = compat.Type(.{ .struct_info = new_info }) };
 }
 
 pub inline fn removeOrError(list: *List, index: usize) IndexError!void {
@@ -382,6 +374,6 @@ test insertOrError {
     }
 }
 
-inline fn info(comptime list: List) std.builtin.Type.Struct {
-    return @typeInfo(list.inner).Struct;
+inline fn info(comptime list: List) compat.TypeInfo.StructInfo {
+    return compat.typeInfo(list.inner).struct_info;
 }

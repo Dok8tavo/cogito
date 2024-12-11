@@ -50,10 +50,10 @@ pub inline fn from(kv_struct: anytype) Dict {
     var fields: []const KeyValueInfo = &.{};
     for (kv_struct_info.fields) |field| {
         fields = fields ++ &[_]KeyValueInfo{.{
-            .default_value = @ptrCast(&@field(kv_struct, field.name)),
-            .is_comptime = true,
-            .name = field.name,
-            .type = field.type,
+            .field_default_value = @ptrCast(&@field(kv_struct, field.field_name)),
+            .field_is_comptime = true,
+            .field_name = field.field_name,
+            .field_type = field.field_type,
         }};
     }
 
@@ -104,10 +104,10 @@ pub inline fn add(dict: *Dict, key: anytype, value: anytype) void {
     const Value = @TypeOf(value);
     var struct_info = dict.info();
     struct_info.fields = dict.info().fields ++ &[_]KeyValueInfo{.{
-        .name = intoString(key),
-        .default_value = @ptrCast(&value),
-        .is_comptime = true,
-        .type = Value,
+        .field_name = intoString(key),
+        .field_default_value = @ptrCast(&value),
+        .field_is_comptime = true,
+        .field_type = Value,
     }};
 
     dict.inner = compat.Type(.{ .struct_info = struct_info });
@@ -181,14 +181,14 @@ pub const KeyIterator = struct {
     index: usize = 0,
     dict: Dict = .{},
 
-    pub inline fn peek(iterator: KeyIterator) ?[:0]const u8 {
+    pub inline fn peek(iterator: KeyIterator) ?[]const u8 {
         return if (iterator.dict.size() <= iterator.index)
             null
         else
-            iterator.dict.info().fields[iterator.index].name;
+            iterator.dict.info().fields[iterator.index].field_name;
     }
 
-    pub inline fn next(iterator: *KeyIterator) ?[:0]const u8 {
+    pub inline fn next(iterator: *KeyIterator) ?[]const u8 {
         return if (iterator.peek()) |key| {
             iterator.index += 1;
             return key;
@@ -208,14 +208,14 @@ pub const ValueIterator = struct {
         return if (iterator.dict.size() <= iterator.index)
             t.NoReturn
         else
-            iterator.dict.info().fields[iterator.index].type;
+            iterator.dict.info().fields[iterator.index].field_type;
     }
 
     pub inline fn peek(iterator: ValueIterator) ?Peek(iterator) {
         return if (iterator.dict.size() <= iterator.index)
             null
         else
-            iterator.dict.get(iterator.dict.info().fields[iterator.index].name);
+            iterator.dict.get(iterator.dict.info().fields[iterator.index].field_name);
     }
 
     pub inline fn next(iterator: *ValueIterator) ?Peek(iterator.*) {
@@ -238,14 +238,14 @@ pub const Iterator = struct {
         return if (iterator.dict.size() <= iterator.index)
             t.NoReturn
         else
-            struct { [:0]const u8, iterator.dict.info().fields[iterator.index].type };
+            struct { [:0]const u8, iterator.dict.info().fields[iterator.index].field_type };
     }
 
     pub inline fn peek(iterator: Iterator) ?Peek(iterator) {
         if (iterator.dict.size() <= iterator.index) return null;
 
-        const key = iterator.dict.info().fields[iterator.index].name;
-        return .{ key, @field((iterator.dict.inner{}), key) };
+        const key = iterator.dict.info().fields[iterator.index].field_name;
+        return .{ key ++ "\x00", @field((iterator.dict.inner{}), key) };
     }
 
     pub inline fn next(iterator: *Iterator) ?Peek(iterator.*) {
