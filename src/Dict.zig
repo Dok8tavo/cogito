@@ -455,7 +455,7 @@ test iterate {
         const peek1 = iterator.peek() orelse
             t.compTry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqualStrings("key1", peek1[0]));
+        t.compTryEqualStrings("key1", peek1[0]);
         t.compTry(std.testing.expectEqual(1, peek1[1]));
 
         const peek2 = iterator.peek() orelse

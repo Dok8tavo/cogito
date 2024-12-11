@@ -639,8 +639,15 @@ fn EitherUnionAccess(Union: type, variants: []const []const u8) type {
 }
 
 fn isEither(value: anytype, variants: []const []const u8) bool {
-    @setEvalBranchQuota(2000);
+    const tag = @tagName(value);
+    @setEvalBranchQuota(10_000);
     return for (variants) |variant| {
-        if (std.mem.eql(u8, @tagName(value), variant)) break true;
+        if (streq(tag, variant)) break true;
     } else false;
+}
+
+fn streq(a: []const u8, b: []const u8) bool {
+    return a.len == b.len and for (a, b) |c, d| {
+        if (c != d) break false;
+    } else true;
 }

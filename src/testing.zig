@@ -51,3 +51,8 @@ pub inline fn compTry(error_union: anytype) Payload(error_union) {
         @errorName(err),
     });
 }
+
+pub inline fn compTryEqualStrings(a: []const u8, b: []const u8) void {
+    if (!std.mem.eql(u8, a, b))
+        compileError("`{s}` != `{s}`", .{ a, b });
+}
