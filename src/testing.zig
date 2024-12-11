@@ -33,8 +33,8 @@ pub inline fn compileError(fmt: []const u8, args: anytype) noreturn {
 pub inline fn Payload(error_union: anytype) type {
     const info = compat.typeInfo(@TypeOf(error_union));
     return switch (info) {
-        .error_union_info => |eu| eu.payload,
-        .error_set_info => NoReturn,
+        .error_union => |eu| eu.payload,
+        .error_set => NoReturn,
         else => unreachable,
     };
 }

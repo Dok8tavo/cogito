@@ -21,13 +21,13 @@
 // SOFTWARE.
 //
 
-inner: type = compat.Type(.{ .struct_info = .{} }),
+inner: type = compat.TypeFrom(.{ .@"struct" = .{} }),
 
 const compat = @import("compat.zig");
 const std = @import("std");
 const t = @import("testing.zig");
 
-const KeyValueInfo = compat.TypeInfo.StructInfo.FieldInfo;
+const KeyValue = compat.Type.Struct.Field;
 const Dict = @This();
 
 pub inline fn from(kv_struct: anytype) Dict {
@@ -35,31 +35,31 @@ pub inline fn from(kv_struct: anytype) Dict {
     const kv_info = compat.typeInfo(KVStruct);
 
     var kv_struct_info = switch (kv_info) {
-        .struct_info => |struct_info| struct_info,
+        .@"struct" => |@"struct"| @"struct",
         else => t.compileError(
-            "A dict must be made from a `.Struct`, not a `.{s}` like `{s}`!",
+            "A dict must be made from a `struct`, not a `.{s}` like `{s}`!",
             .{ @tagName(kv_info.intoStd()), @typeName(KVStruct) },
         ),
     };
 
     if (kv_struct_info.is_tuple) t.compileError(
-        "A dict must be made from a struct, not a tuple like `{s}`!",
+        "A dict must be made from a `struct`, not a tuple like `{s}`!",
         .{@typeName(KVStruct)},
     );
 
-    var fields: []const KeyValueInfo = &.{};
+    var fields: []const KeyValue = &.{};
     for (kv_struct_info.fields) |field| {
-        fields = fields ++ &[_]KeyValueInfo{.{
-            .field_default_value = @ptrCast(&@field(kv_struct, field.field_name)),
-            .field_is_comptime = true,
-            .field_name = field.field_name,
-            .field_type = field.field_type,
+        fields = fields ++ &[_]KeyValue{.{
+            .default_value = @ptrCast(&@field(kv_struct, field.name)),
+            .is_comptime = true,
+            .name = field.name,
+            .type = field.type,
         }};
     }
 
     kv_struct_info.fields = fields;
 
-    return Dict{ .inner = compat.Type(kv_info) };
+    return Dict{ .inner = compat.TypeFrom(kv_info) };
 }
 
 pub inline fn size(dict: Dict) usize {
@@ -102,31 +102,31 @@ pub inline fn addOrReplace(dict: *Dict, key: anytype, value: anytype) void {
 
 pub inline fn add(dict: *Dict, key: anytype, value: anytype) void {
     const Value = @TypeOf(value);
-    var struct_info = dict.info();
-    struct_info.fields = dict.info().fields ++ &[_]KeyValueInfo{.{
-        .field_name = intoString(key),
-        .field_default_value = @ptrCast(&value),
-        .field_is_comptime = true,
-        .field_type = Value,
+    var @"struct" = dict.info();
+    @"struct".fields = dict.info().fields ++ &[_]KeyValue{.{
+        .name = intoString(key),
+        .default_value = @ptrCast(&value),
+        .is_comptime = true,
+        .type = Value,
     }};
 
-    dict.inner = compat.Type(.{ .struct_info = struct_info });
+    dict.inner = compat.TypeFrom(.{ .@"struct" = @"struct" });
 }
 
 // == Removing items ==
 pub const RemoveError = error{KeyDoesNotExist};
 
 pub inline fn remove(dict: *Dict, key: anytype) void {
-    var struct_info = dict.info();
+    var @"struct" = dict.info();
     const new_length = dict.size() - 1;
     for (0..new_length) |index| {
-        if (std.mem.eql(u8, struct_info.fields[index].name, intoString(key))) {
-            struct_info.fields = dict.info().fields[0..index] ++ dict.info().fields[index + 1 ..];
+        if (std.mem.eql(u8, @"struct".fields[index].name, intoString(key))) {
+            @"struct".fields = dict.info().fields[0..index] ++ dict.info().fields[index + 1 ..];
             break;
         }
-    } else struct_info.fields = dict.info().fields[0..new_length];
+    } else @"struct".fields = dict.info().fields[0..new_length];
 
-    dict.inner = compat.Type(.{ .struct_info = struct_info });
+    dict.inner = compat.TypeFrom(.{ .@"struct" = @"struct" });
 }
 
 pub inline fn removeOrError(dict: *Dict, key: anytype) RemoveError!void {
@@ -185,7 +185,7 @@ pub const KeyIterator = struct {
         return if (iterator.dict.size() <= iterator.index)
             null
         else
-            iterator.dict.info().fields[iterator.index].field_name;
+            iterator.dict.info().fields[iterator.index].name;
     }
 
     pub inline fn next(iterator: *KeyIterator) ?[]const u8 {
@@ -208,14 +208,14 @@ pub const ValueIterator = struct {
         return if (iterator.dict.size() <= iterator.index)
             t.NoReturn
         else
-            iterator.dict.info().fields[iterator.index].field_type;
+            iterator.dict.info().fields[iterator.index].type;
     }
 
     pub inline fn peek(iterator: ValueIterator) ?Peek(iterator) {
         return if (iterator.dict.size() <= iterator.index)
             null
         else
-            iterator.dict.get(iterator.dict.info().fields[iterator.index].field_name);
+            iterator.dict.get(iterator.dict.info().fields[iterator.index].name);
     }
 
     pub inline fn next(iterator: *ValueIterator) ?Peek(iterator.*) {
@@ -238,13 +238,13 @@ pub const Iterator = struct {
         return if (iterator.dict.size() <= iterator.index)
             t.NoReturn
         else
-            struct { []const u8, iterator.dict.info().fields[iterator.index].field_type };
+            struct { []const u8, iterator.dict.info().fields[iterator.index].type };
     }
 
     pub inline fn peek(iterator: Iterator) ?Peek(iterator) {
         if (iterator.dict.size() <= iterator.index) return null;
 
-        const key = iterator.dict.info().fields[iterator.index].field_name;
+        const key = iterator.dict.info().fields[iterator.index].name;
         return .{ key, @field((iterator.dict.inner{}), key) };
     }
 
@@ -563,10 +563,10 @@ inline fn intoString(comptime any: anytype) []const u8 {
         []const u8, []u8, [:0]const u8, [:0]u8 => return any,
         @TypeOf(.enum_literal) => return @tagName(any),
         else => if (compat.typeInfo(Any) == .pointer_info) {
-            const pointer_info = compat.typeInfo(Any).pointer_info;
+            const pointer_info = compat.typeInfo(Any).pointer;
             if (pointer_info.size == .One) {
                 const child_info = compat.typeInfo(pointer_info.child);
-                if (child_info == .array_info and child_info.array_info.child == u8)
+                if (child_info == .array_info and child_info.array.child == u8)
                     return any;
             }
         },
@@ -575,6 +575,6 @@ inline fn intoString(comptime any: anytype) []const u8 {
     t.compileError("Can't convert `{s}` into a string!", .{@typeName(Any)});
 }
 
-inline fn info(comptime dict: Dict) compat.TypeInfo.StructInfo {
-    return compat.typeInfo(dict.inner).struct_info;
+inline fn info(comptime dict: Dict) compat.Type.Struct {
+    return compat.typeInfo(dict.inner).@"struct";
 }
