@@ -1,8 +1,15 @@
 # Cogito
 
-Cogito is a zig module that offers basic compile-time datastructures -like `List`, `Dict` or
-`Set`-
-designed to help metaprogramming.
+Cogito is a zig module that offers compile-time only types for high-level metaprogramming.
+
+Since zig's `comptime` can compute types as it goes and allocate memory at will, it should be able
+to use the same kind of abstractions as dynamically-typed languages. Cogito implement the 
+following types:
+
+- `List`,
+- `Dict`, 
+- `String`,
+- `StringSet`,
 
 ## Usage
 
