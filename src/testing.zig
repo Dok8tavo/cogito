@@ -67,7 +67,7 @@ pub inline fn comptryEqualStrings(a: []const u8, b: []const u8) void {
     const vector_b: @Vector(b.len, u8) = array_b.*;
     const equals = @reduce(.And, vector_a == vector_b);
     if (!equals) compileError(
-        "The two compared strings don't have the same content:\na: \"{}\"\nb: \"{}\"",
+        "The two compared strings don't have the same content:\na: \"{s}\"\nb: \"{s}\"",
         .{ a, b },
     );
 }
