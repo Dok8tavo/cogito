@@ -265,7 +265,7 @@ test add {
     comptime {
         var dict = Dict{};
         dict.add(.key, "value");
-        t.compTry(std.testing.expectEqualStrings("value", @field(dict.inner{}, "key")));
+        t.comptryEqualStrings("value", @field(dict.inner{}, "key"));
     }
 }
 
@@ -275,11 +275,11 @@ test addOrError {
         const add_key1 = dict.addOrError(.key1, 2); // this is an error
         const add_key2 = dict.addOrError(.key2, 3); // this isn't
 
-        t.compTry(std.testing.expectError(AddError.KeyAlreadyExists, add_key1));
-        t.compTry(std.testing.expectEqual(void{}, add_key2));
+        t.comptry(std.testing.expectError(AddError.KeyAlreadyExists, add_key1));
+        t.comptry(std.testing.expectEqual(void{}, add_key2));
 
-        t.compTry(std.testing.expectEqual(1, (dict.inner{}).key1));
-        t.compTry(std.testing.expectEqual(3, (dict.inner{}).key2));
+        t.comptry(std.testing.expectEqual(1, (dict.inner{}).key1));
+        t.comptry(std.testing.expectEqual(3, (dict.inner{}).key2));
     }
 }
 
@@ -289,8 +289,8 @@ test addOrLeave {
         dict.addOrLeave(.key1, 2); // does nothing
         dict.addOrLeave(.key2, 3);
 
-        t.compTry(std.testing.expectEqual(1, (dict.inner{}).key1));
-        t.compTry(std.testing.expectEqual(3, (dict.inner{}).key2));
+        t.comptry(std.testing.expectEqual(1, (dict.inner{}).key1));
+        t.comptry(std.testing.expectEqual(3, (dict.inner{}).key2));
     }
 }
 
@@ -300,8 +300,8 @@ test addOrReplace {
         dict.addOrReplace(.key, 2);
         dict.addOrReplace(.not_key, 3);
 
-        t.compTry(std.testing.expectEqual(2, (dict.inner{}).key));
-        t.compTry(std.testing.expectEqual(3, (dict.inner{}).not_key));
+        t.comptry(std.testing.expectEqual(2, (dict.inner{}).key));
+        t.comptry(std.testing.expectEqual(3, (dict.inner{}).not_key));
     }
 }
 
@@ -309,9 +309,9 @@ test remove {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.compTry(std.testing.expect(@hasField(dict.inner, "key")));
+        t.comptryIsTrue(@hasField(dict.inner, "key"));
         dict.remove(.key);
-        t.compTry(std.testing.expect(!@hasField(dict.inner, "key")));
+        t.comptryIsTrue(!@hasField(dict.inner, "key"));
     }
 }
 
@@ -319,17 +319,17 @@ test removeOrError {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.compTry(std.testing.expect(@hasField(dict.inner, "key")));
-        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
+        t.comptryIsTrue(@hasField(dict.inner, "key"));
+        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
 
         const remove_key = dict.removeOrError(.key);
         const remove_not_key = dict.removeOrError(.not_key);
 
-        t.compTry(std.testing.expect(!@hasField(dict.inner, "key")));
-        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
+        t.comptryIsTrue(!@hasField(dict.inner, "key"));
+        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
 
-        t.compTry(std.testing.expectEqual(void{}, remove_key));
-        t.compTry(std.testing.expectError(RemoveError.KeyDoesNotExist, remove_not_key));
+        t.comptry(std.testing.expectEqual(void{}, remove_key));
+        t.comptry(std.testing.expectError(RemoveError.KeyDoesNotExist, remove_not_key));
     }
 }
 
@@ -337,14 +337,14 @@ test removeOrLeave {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.compTry(std.testing.expect(@hasField(dict.inner, "key")));
-        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
+        t.comptryIsTrue(@hasField(dict.inner, "key"));
+        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
 
         dict.removeOrLeave(.key);
         dict.removeOrLeave(.not_key);
 
-        t.compTry(std.testing.expect(!@hasField(dict.inner, "key")));
-        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
+        t.comptryIsTrue(!@hasField(dict.inner, "key"));
+        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
     }
 }
 
@@ -352,9 +352,9 @@ test set {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.compTry(std.testing.expectEqual(1, (dict.inner{}).key));
+        t.comptry(std.testing.expectEqual(1, (dict.inner{}).key));
         dict.set(.key, "not even a `comptime_int`");
-        t.compTry(std.testing.expectEqualStrings("not even a `comptime_int`", (dict.inner{}).key));
+        t.comptryEqualStrings("not even a `comptime_int`", (dict.inner{}).key);
     }
 }
 
@@ -362,17 +362,17 @@ test setOrError {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.compTry(std.testing.expectEqual(1, (dict.inner{}).key));
-        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
+        t.comptry(std.testing.expectEqual(1, (dict.inner{}).key));
+        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
 
         const set_key = dict.setOrError(.key, 2);
         const set_not_key = dict.setOrError(.not_key, 2);
 
-        t.compTry(std.testing.expectEqual(2, (dict.inner{}).key));
-        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
+        t.comptry(std.testing.expectEqual(2, (dict.inner{}).key));
+        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
 
-        t.compTry(std.testing.expectEqual(void{}, set_key));
-        t.compTry(std.testing.expectError(RemoveError.KeyDoesNotExist, set_not_key));
+        t.comptry(std.testing.expectEqual(void{}, set_key));
+        t.comptry(std.testing.expectError(RemoveError.KeyDoesNotExist, set_not_key));
     }
 }
 
@@ -380,70 +380,70 @@ test setOrLeave {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.compTry(std.testing.expectEqual(1, (dict.inner{}).key));
-        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
+        t.comptry(std.testing.expectEqual(1, (dict.inner{}).key));
+        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
 
         dict.setOrLeave(.key, 2);
         dict.setOrLeave(.not_key, 2);
 
-        t.compTry(std.testing.expectEqual(2, (dict.inner{}).key));
-        t.compTry(std.testing.expect(!@hasField(dict.inner, "not_key")));
+        t.comptry(std.testing.expectEqual(2, (dict.inner{}).key));
+        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
     }
 }
 
 test has {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
-        t.compTry(std.testing.expect(dict.has(.key)));
-        t.compTry(std.testing.expect(!dict.has(.not_key)));
+        t.comptryIsTrue(dict.has(.key));
+        t.comptryIsTrue(!dict.has(.not_key));
     }
 }
 
 test Get {
     comptime {
         const dict = Dict.from(.{ .key = 1 });
-        t.compTry(std.testing.expectEqual(comptime_int, Dict.Get(dict, .key)));
-        t.compTry(std.testing.expectEqual(t.NoReturn, Dict.Get(dict, .not_key)));
+        t.comptry(std.testing.expectEqual(comptime_int, Dict.Get(dict, .key)));
+        t.comptry(std.testing.expectEqual(t.NoReturn, Dict.Get(dict, .not_key)));
     }
 }
 
 test get {
     comptime {
         const dict = Dict.from(.{ .key = 1 });
-        t.compTry(std.testing.expectEqual(1, dict.get(.key)));
-        t.compTry(std.testing.expectEqual(null, dict.get(.not_key)));
+        t.comptry(std.testing.expectEqual(1, dict.get(.key)));
+        t.comptry(std.testing.expectEqual(null, dict.get(.not_key)));
     }
 }
 
 test pop {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
-        t.compTry(std.testing.expectEqual(1, dict.pop(.key)));
-        t.compTry(std.testing.expect(!dict.has(.key)));
+        t.comptry(std.testing.expectEqual(1, dict.pop(.key)));
+        t.comptryIsTrue(!dict.has(.key));
     }
 }
 
 test popOrError {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
-        t.compTry(std.testing.expectEqual(1, dict.popOrError(.key)));
-        t.compTry(std.testing.expectError(RemoveError.KeyDoesNotExist, dict.popOrError(.key)));
+        t.comptry(std.testing.expectEqual(1, dict.popOrError(.key)));
+        t.comptry(std.testing.expectError(RemoveError.KeyDoesNotExist, dict.popOrError(.key)));
     }
 }
 
 test popOrLeave {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
-        try std.testing.expect(dict.has(.key));
+        t.comptryIsTrue(dict.has(.key));
 
         const pop1 = dict.popOrLeave(.key);
-        t.compTry(std.testing.expect(!dict.has(.key)));
+        t.comptryIsTrue(!dict.has(.key));
 
         const pop2 = dict.popOrLeave(.key);
-        t.compTry(std.testing.expect(!dict.has(.key)));
+        t.comptryIsTrue(!dict.has(.key));
 
-        t.compTry(std.testing.expectEqual(1, pop1));
-        t.compTry(std.testing.expectEqual(null, pop2));
+        t.comptry(std.testing.expectEqual(1, pop1));
+        t.comptry(std.testing.expectEqual(null, pop2));
     }
 }
 
@@ -453,37 +453,37 @@ test iterate {
         var iterator = dict.iterate();
 
         const peek1 = iterator.peek() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTryEqualStrings("key1", peek1[0]);
-        t.compTry(std.testing.expectEqual(1, peek1[1]));
+        t.comptryEqualStrings("key1", peek1[0]);
+        t.comptry(std.testing.expectEqual(1, peek1[1]));
 
         const peek2 = iterator.peek() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqualStrings("key1", peek2[0]));
-        t.compTry(std.testing.expectEqual(1, peek2[1]));
+        t.comptryEqualStrings("key1", peek2[0]);
+        t.comptry(std.testing.expectEqual(1, peek2[1]));
 
         const next1 = iterator.next() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqualStrings("key1", next1[0]));
-        t.compTry(std.testing.expectEqual(1, next1[1]));
+        t.comptryEqualStrings("key1", next1[0]);
+        t.comptry(std.testing.expectEqual(1, next1[1]));
 
         const peek3 = iterator.peek() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqualStrings("key2", peek3[0]));
-        t.compTry(std.testing.expectEqual(2, peek3[1]));
+        t.comptryEqualStrings("key2", peek3[0]);
+        t.comptry(std.testing.expectEqual(2, peek3[1]));
 
         const next2 = iterator.next() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqualStrings("key2", next2[0]));
-        t.compTry(std.testing.expectEqual(2, next2[1]));
+        t.comptryEqualStrings("key2", next2[0]);
+        t.comptry(std.testing.expectEqual(2, next2[1]));
 
-        t.compTry(std.testing.expectEqual(null, iterator.peek()));
-        t.compTry(std.testing.expectEqual(null, iterator.next()));
+        t.comptry(std.testing.expectEqual(null, iterator.peek()));
+        t.comptry(std.testing.expectEqual(null, iterator.next()));
     }
 }
 
@@ -493,32 +493,32 @@ test iterateKeys {
         var iterator = dict.iterateKeys();
 
         const peek1 = iterator.peek() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqualStrings("key1", peek1));
+        t.comptryEqualStrings("key1", peek1);
 
         const peek2 = iterator.peek() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqualStrings("key1", peek2));
+        t.comptryEqualStrings("key1", peek2);
 
         const next1 = iterator.next() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqualStrings("key1", next1));
+        t.comptryEqualStrings("key1", next1);
 
         const peek3 = iterator.peek() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqualStrings("key2", peek3));
+        t.comptryEqualStrings("key2", peek3);
 
         const next2 = iterator.next() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqualStrings("key2", next2));
+        t.comptryEqualStrings("key2", next2);
 
-        t.compTry(std.testing.expectEqual(null, iterator.peek()));
-        t.compTry(std.testing.expectEqual(null, iterator.next()));
+        t.comptry(std.testing.expectEqual(null, iterator.peek()));
+        t.comptry(std.testing.expectEqual(null, iterator.next()));
     }
 }
 
@@ -528,32 +528,32 @@ test iterateValues {
         var iterator = dict.iterateValues();
 
         const peek1 = iterator.peek() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqual(1, peek1));
+        t.comptry(std.testing.expectEqual(1, peek1));
 
         const peek2 = iterator.peek() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqual(1, peek2));
+        t.comptry(std.testing.expectEqual(1, peek2));
 
         const next1 = iterator.next() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqual(1, next1));
+        t.comptry(std.testing.expectEqual(1, next1));
 
         const peek3 = iterator.peek() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqual(2, peek3));
+        t.comptry(std.testing.expectEqual(2, peek3));
 
         const next2 = iterator.next() orelse
-            t.compTry(error.UnexpectedNull);
+            t.comptry(error.UnexpectedNull);
 
-        t.compTry(std.testing.expectEqual(2, next2));
+        t.comptry(std.testing.expectEqual(2, next2));
 
-        t.compTry(std.testing.expectEqual(null, iterator.peek()));
-        t.compTry(std.testing.expectEqual(null, iterator.next()));
+        t.comptry(std.testing.expectEqual(null, iterator.peek()));
+        t.comptry(std.testing.expectEqual(null, iterator.next()));
     }
 }
 

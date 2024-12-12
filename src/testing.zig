@@ -48,14 +48,14 @@ pub inline fn ErrorSet(error_union: anytype) type {
     };
 }
 
-pub inline fn compTry(error_union: anytype) Payload(error_union) {
+pub inline fn comptry(error_union: anytype) Payload(error_union) {
     return error_union catch |err| compileError("`{s}.{s}`", .{
         @typeName(ErrorSet(error_union)),
         @errorName(err),
     });
 }
 
-pub inline fn compTryEqualStrings(a: []const u8, b: []const u8) void {
+pub inline fn comptryEqualStrings(a: []const u8, b: []const u8) void {
     if (a.len != b.len) compileError(
         "The two compared strings aren't even the same length: {} and {}",
         .{ a.len, b.len },

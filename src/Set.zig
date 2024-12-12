@@ -124,35 +124,35 @@ pub inline fn isDisjoint(set1: Set, set2: Set) bool {
 test has {
     comptime {
         const set = Set.from(.{.item});
-        t.compTry(std.testing.expect(set.has(.item)));
-        t.compTry(std.testing.expect(!set.has(.not_item)));
+        t.comptryIsTrue(set.has(.item));
+        t.comptryIsTrue(!set.has(.not_item));
     }
 }
 
 test size {
     comptime {
         var set = Set{};
-        t.compTry(std.testing.expectEqual(0, set.size()));
+        t.comptry(std.testing.expectEqual(0, set.size()));
 
         set.add(.item_1);
-        t.compTry(std.testing.expectEqual(1, set.size()));
+        t.comptry(std.testing.expectEqual(1, set.size()));
 
         set.add(.item_2);
-        t.compTry(std.testing.expectEqual(2, set.size()));
+        t.comptry(std.testing.expectEqual(2, set.size()));
     }
 }
 
 test add {
     comptime {
         var set = Set{};
-        t.compTry(std.testing.expect(!set.has(.item)));
+        t.comptryIsTrue(!set.has(.item));
 
         set.add(.item_1);
-        t.compTry(std.testing.expect(set.has(.item_1)));
+        t.comptryIsTrue(set.has(.item_1));
 
         set.add(.item_2);
-        t.compTry(std.testing.expect(set.has(.item_1)));
-        t.compTry(std.testing.expect(set.has(.item_2)));
+        t.comptryIsTrue(set.has(.item_1));
+        t.comptryIsTrue(set.has(.item_2));
     }
 }
 
@@ -163,8 +163,8 @@ test addOrError {
         const not_err = set.addOrError(.item);
         const yes_err = set.addOrError(.item);
 
-        t.compTry(std.testing.expectEqual({}, not_err));
-        t.compTry(std.testing.expectEqual(Dict.AddError.KeyAlreadyExists, yes_err));
+        t.comptry(std.testing.expectEqual({}, not_err));
+        t.comptry(std.testing.expectEqual(Dict.AddError.KeyAlreadyExists, yes_err));
     }
 }
 
@@ -172,65 +172,65 @@ test addOrLeave {
     comptime {
         var set = Set{};
 
-        t.compTry(std.testing.expect(!set.has(.item)));
+        t.comptryIsTrue(!set.has(.item));
 
         set.addOrLeave(.item);
-        t.compTry(std.testing.expect(set.has(.item)));
+        t.comptryIsTrue(set.has(.item));
 
         set.addOrLeave(.item);
-        t.compTry(std.testing.expect(set.has(.item)));
+        t.comptryIsTrue(set.has(.item));
     }
 }
 
 test addOrRemove {
     comptime {
         var set = Set{};
-        t.compTry(std.testing.expect(!set.has(.item)));
+        t.comptryIsTrue(!set.has(.item));
 
         set.addOrRemove(.item);
-        t.compTry(std.testing.expect(set.has(.item)));
+        t.comptryIsTrue(set.has(.item));
 
         set.addOrRemove(.item);
-        t.compTry(std.testing.expect(!set.has(.item)));
+        t.comptryIsTrue(!set.has(.item));
 
         set.addOrRemove(.item);
-        t.compTry(std.testing.expect(set.has(.item)));
+        t.comptryIsTrue(set.has(.item));
     }
 }
 
 test remove {
     comptime {
         var set = Set.from(.{.item});
-        t.compTry(std.testing.expect(set.has(.item)));
+        t.comptryIsTrue(set.has(.item));
 
         set.remove(.item);
-        t.compTry(std.testing.expect(!set.has(.item)));
+        t.comptryIsTrue(!set.has(.item));
     }
 }
 
 test removeOrError {
     comptime {
         var set = Set.from(.{.item});
-        t.compTry(std.testing.expect(set.has(.item)));
+        t.comptryIsTrue(set.has(.item));
 
         const not_err = set.removeOrError(.item);
         const yes_err = set.removeOrError(.item);
 
-        t.compTry(std.testing.expectEqual({}, not_err));
-        t.compTry(std.testing.expectEqual(Dict.RemoveError.KeyDoesNotExist, yes_err));
+        t.comptry(std.testing.expectEqual({}, not_err));
+        t.comptry(std.testing.expectEqual(Dict.RemoveError.KeyDoesNotExist, yes_err));
     }
 }
 
 test removeOrLeave {
     comptime {
         var set = Set.from(.{.item});
-        t.compTry(std.testing.expect(set.has(.item)));
+        t.comptryIsTrue(set.has(.item));
 
         set.removeOrLeave(.item);
-        t.compTry(std.testing.expect(!set.has(.item)));
+        t.comptryIsTrue(!set.has(.item));
 
         set.removeOrLeave(.item);
-        t.compTry(std.testing.expect(!set.has(.item)));
+        t.comptryIsTrue(!set.has(.item));
     }
 }
 
@@ -240,9 +240,9 @@ test isDisjoint {
         const set2 = Set.from(.{ .b, .c });
         const set3 = Set.from(.{ .c, .d });
 
-        t.compTry(std.testing.expect(!set1.isDisjoint(set2)));
-        t.compTry(std.testing.expect(set1.isDisjoint(set3)));
-        t.compTry(std.testing.expect(!set2.isDisjoint(set3)));
+        t.comptryIsTrue(!set1.isDisjoint(set2));
+        t.comptryIsTrue(set1.isDisjoint(set3));
+        t.comptryIsTrue(!set2.isDisjoint(set3));
     }
 }
 
@@ -253,10 +253,10 @@ test combine {
 
         const set3 = set1.combine(set2);
 
-        t.compTry(std.testing.expect(set3.has(.a)));
-        t.compTry(std.testing.expect(set3.has(.b)));
-        t.compTry(std.testing.expect(set3.has(.c)));
-        t.compTry(std.testing.expect(set3.has(.d)));
+        t.comptryIsTrue(set3.has(.a));
+        t.comptryIsTrue(set3.has(.b));
+        t.comptryIsTrue(set3.has(.c));
+        t.comptryIsTrue(set3.has(.d));
     }
 }
 
@@ -266,16 +266,16 @@ test combineOrError {
         const set2 = Set.from(.{ .b, .c });
         const set3 = Set.from(.{ .c, .d });
 
-        t.compTry(std.testing.expectError(Dict.AddError.KeyAlreadyExists, set1.combineOrError(set2)));
+        t.comptry(std.testing.expectError(Dict.AddError.KeyAlreadyExists, set1.combineOrError(set2)));
 
-        const set4 = t.compTry(set1.combineOrError(set3));
+        const set4 = t.comptry(set1.combineOrError(set3));
 
-        t.compTry(std.testing.expect(set4.has(.a)));
-        t.compTry(std.testing.expect(set4.has(.b)));
-        t.compTry(std.testing.expect(set4.has(.c)));
-        t.compTry(std.testing.expect(set4.has(.d)));
+        t.comptryIsTrue(set4.has(.a));
+        t.comptryIsTrue(set4.has(.b));
+        t.comptryIsTrue(set4.has(.c));
+        t.comptryIsTrue(set4.has(.d));
 
-        t.compTry(std.testing.expectError(Dict.AddError.KeyAlreadyExists, set2.combineOrError(set3)));
+        t.comptry(std.testing.expectError(Dict.AddError.KeyAlreadyExists, set2.combineOrError(set3)));
     }
 }
 
@@ -289,20 +289,20 @@ test combineOrLeave {
         const set23 = set2.combineOrLeave(set3);
         const set13 = set1.combineOrLeave(set3);
 
-        t.compTry(std.testing.expect(set12.has(.a)));
-        t.compTry(std.testing.expect(set12.has(.b)));
-        t.compTry(std.testing.expect(set12.has(.c)));
-        t.compTry(std.testing.expect(!set12.has(.d)));
+        t.comptryIsTrue(set12.has(.a));
+        t.comptryIsTrue(set12.has(.b));
+        t.comptryIsTrue(set12.has(.c));
+        t.comptryIsTrue(!set12.has(.d));
 
-        t.compTry(std.testing.expect(!set23.has(.a)));
-        t.compTry(std.testing.expect(set23.has(.b)));
-        t.compTry(std.testing.expect(set23.has(.c)));
-        t.compTry(std.testing.expect(set23.has(.d)));
+        t.comptryIsTrue(!set23.has(.a));
+        t.comptryIsTrue(set23.has(.b));
+        t.comptryIsTrue(set23.has(.c));
+        t.comptryIsTrue(set23.has(.d));
 
-        t.compTry(std.testing.expect(set13.has(.a)));
-        t.compTry(std.testing.expect(set13.has(.b)));
-        t.compTry(std.testing.expect(set13.has(.c)));
-        t.compTry(std.testing.expect(set13.has(.d)));
+        t.comptryIsTrue(set13.has(.a));
+        t.comptryIsTrue(set13.has(.b));
+        t.comptryIsTrue(set13.has(.c));
+        t.comptryIsTrue(set13.has(.d));
     }
 }
 
@@ -318,24 +318,24 @@ test intersection {
 
         const set123 = set12.intersection(set23);
 
-        t.compTry(std.testing.expect(!set12.has(.a)));
-        t.compTry(std.testing.expect(set12.has(.b)));
-        t.compTry(std.testing.expect(!set12.has(.c)));
-        t.compTry(std.testing.expect(!set12.has(.d)));
+        t.comptryIsTrue(!set12.has(.a));
+        t.comptryIsTrue(set12.has(.b));
+        t.comptryIsTrue(!set12.has(.c));
+        t.comptryIsTrue(!set12.has(.d));
 
-        t.compTry(std.testing.expect(!set13.has(.a)));
-        t.compTry(std.testing.expect(!set13.has(.b)));
-        t.compTry(std.testing.expect(!set13.has(.c)));
-        t.compTry(std.testing.expect(!set13.has(.d)));
+        t.comptryIsTrue(!set13.has(.a));
+        t.comptryIsTrue(!set13.has(.b));
+        t.comptryIsTrue(!set13.has(.c));
+        t.comptryIsTrue(!set13.has(.d));
 
-        t.compTry(std.testing.expect(!set23.has(.a)));
-        t.compTry(std.testing.expect(!set23.has(.b)));
-        t.compTry(std.testing.expect(set23.has(.c)));
-        t.compTry(std.testing.expect(!set23.has(.d)));
+        t.comptryIsTrue(!set23.has(.a));
+        t.comptryIsTrue(!set23.has(.b));
+        t.comptryIsTrue(set23.has(.c));
+        t.comptryIsTrue(!set23.has(.d));
 
-        t.compTry(std.testing.expect(!set123.has(.a)));
-        t.compTry(std.testing.expect(!set123.has(.b)));
-        t.compTry(std.testing.expect(!set123.has(.c)));
-        t.compTry(std.testing.expect(!set123.has(.d)));
+        t.comptryIsTrue(!set123.has(.a));
+        t.comptryIsTrue(!set123.has(.b));
+        t.comptryIsTrue(!set123.has(.c));
+        t.comptryIsTrue(!set123.has(.d));
     }
 }

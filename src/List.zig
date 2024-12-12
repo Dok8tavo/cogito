@@ -213,8 +213,8 @@ test getSet {
         var list = List.from(.{ .hello, .world });
         const hello = list.getSet(0, .goodbye);
 
-        t.compTry(expect(.hello, hello));
-        t.compTry(expect(.{ .goodbye, .world }, list.inner{}));
+        t.comptry(expect(.hello, hello));
+        t.comptry(expect(.{ .goodbye, .world }, list.inner{}));
     }
 }
 
@@ -222,7 +222,7 @@ test setOrError {
     comptime {
         var list = List.from(.{ 0, 1, 2 });
         const set_or_err = list.setOrError(3, "This isn't right!");
-        t.compTry(expect(IndexError.IndexOutOfBounds, set_or_err));
+        t.comptry(expect(IndexError.IndexOutOfBounds, set_or_err));
     }
 }
 
@@ -231,7 +231,7 @@ test set {
         var list = List.from(.{ 'l', 'o', 'u' });
         list.set(2, "l");
 
-        t.compTry(expect(.{ 'l', 'o', "l" }, list.inner{}));
+        t.comptry(expect(.{ 'l', 'o', "l" }, list.inner{}));
     }
 }
 
@@ -239,18 +239,18 @@ test pop {
     comptime {
         var list = List.from(.{ 3, 10, 5, 16, 8, 4, 2, 1, 4, 2, 1 });
 
-        t.compTry(expect(1, list.pop()));
-        t.compTry(expect(2, list.pop()));
-        t.compTry(expect(4, list.pop()));
-        t.compTry(expect(1, list.pop()));
-        t.compTry(expect(2, list.pop()));
-        t.compTry(expect(4, list.pop()));
-        t.compTry(expect(8, list.pop()));
-        t.compTry(expect(16, list.pop()));
-        t.compTry(expect(5, list.pop()));
-        t.compTry(expect(10, list.pop()));
-        t.compTry(expect(3, list.pop()));
-        t.compTry(expect(null, list.pop()));
+        t.comptry(expect(1, list.pop()));
+        t.comptry(expect(2, list.pop()));
+        t.comptry(expect(4, list.pop()));
+        t.comptry(expect(1, list.pop()));
+        t.comptry(expect(2, list.pop()));
+        t.comptry(expect(4, list.pop()));
+        t.comptry(expect(8, list.pop()));
+        t.comptry(expect(16, list.pop()));
+        t.comptry(expect(5, list.pop()));
+        t.comptry(expect(10, list.pop()));
+        t.comptry(expect(3, list.pop()));
+        t.comptry(expect(null, list.pop()));
     }
 }
 
@@ -261,8 +261,8 @@ test removeOrError {
         const remove1 = list.removeOrError(2);
         const remove2 = list.removeOrError(2);
 
-        t.compTry(expect({}, remove1));
-        t.compTry(expect(IndexError.IndexOutOfBounds, remove2));
+        t.comptry(expect({}, remove1));
+        t.comptry(expect(IndexError.IndexOutOfBounds, remove2));
     }
 }
 
@@ -271,10 +271,10 @@ test removeOrLeave {
         var list = List.from(.{ .a, .b, .c });
 
         list.removeOrLeave(2);
-        t.compTry(expect(.{ .a, .b }, list.inner{}));
+        t.comptry(expect(.{ .a, .b }, list.inner{}));
 
         list.removeOrLeave(2);
-        t.compTry(expect(.{ .a, .b }, list.inner{}));
+        t.comptry(expect(.{ .a, .b }, list.inner{}));
     }
 }
 
@@ -283,10 +283,10 @@ test remove {
         var list = List.from(.{ "Hello", "How", "are", "you" });
 
         list.remove(2);
-        t.compTry(expect(.{ "Hello", "How", "you" }, list.inner{}));
+        t.comptry(expect(.{ "Hello", "How", "you" }, list.inner{}));
 
         list.remove(1);
-        t.compTry(expect(.{ "Hello", "you" }, list.inner{}));
+        t.comptry(expect(.{ "Hello", "you" }, list.inner{}));
     }
 }
 
@@ -296,7 +296,7 @@ test concat {
         const list2 = List.from(.{ "viva", "l'Algérie" });
         const list3 = list1.concat(list2);
 
-        t.compTry(expect(
+        t.comptry(expect(
             list3.inner{},
             .{ 1, 2, 3, "viva", "l'Algérie" },
         ));
@@ -312,11 +312,11 @@ test prepend {
         list.prepend(3);
         list.prepend(2);
 
-        t.compTry(expect(2, list.get(0)));
-        t.compTry(expect(3, list.get(1)));
-        t.compTry(expect(5, list.get(2)));
-        t.compTry(expect(7, list.get(3)));
-        t.compTry(expect(null, list.get(4)));
+        t.comptry(expect(2, list.get(0)));
+        t.comptry(expect(3, list.get(1)));
+        t.comptry(expect(5, list.get(2)));
+        t.comptry(expect(7, list.get(3)));
+        t.comptry(expect(null, list.get(4)));
     }
 }
 
@@ -329,22 +329,22 @@ test append {
         list.append(5);
         list.append(7);
 
-        t.compTry(expect(2, list.get(0)));
-        t.compTry(expect(3, list.get(1)));
-        t.compTry(expect(5, list.get(2)));
-        t.compTry(expect(7, list.get(3)));
-        t.compTry(expect(null, list.get(4)));
+        t.comptry(expect(2, list.get(0)));
+        t.comptry(expect(3, list.get(1)));
+        t.comptry(expect(5, list.get(2)));
+        t.comptry(expect(7, list.get(3)));
+        t.comptry(expect(null, list.get(4)));
     }
 }
 
 test insert {
     comptime {
         var list = List{};
-        t.compTry(expect(.{}, list.inner{}));
+        t.comptry(expect(.{}, list.inner{}));
 
         list.insert("Hello world!", 0);
 
-        t.compTry(expect(.{"Hello world!"}, list.inner{}));
+        t.comptry(expect(.{"Hello world!"}, list.inner{}));
     }
 }
 
@@ -352,11 +352,11 @@ test get {
     comptime {
         const list = List.from(.{ 2, 3, 5, 7 });
 
-        t.compTry(expect(2, list.get(0)));
-        t.compTry(expect(3, list.get(1)));
-        t.compTry(expect(5, list.get(2)));
-        t.compTry(expect(7, list.get(3)));
-        t.compTry(expect(null, list.get(4)));
+        t.comptry(expect(2, list.get(0)));
+        t.comptry(expect(3, list.get(1)));
+        t.comptry(expect(5, list.get(2)));
+        t.comptry(expect(7, list.get(3)));
+        t.comptry(expect(null, list.get(4)));
     }
 }
 
@@ -364,13 +364,13 @@ test insertOrError {
     comptime {
         var list = List.from(.{});
 
-        t.compTry(expect(
+        t.comptry(expect(
             IndexError.IndexOutOfBounds,
             list.insertOrError("Index is out of bounds!", 10_000),
         ));
 
-        t.compTry(list.insertOrError("Index isn't out of bounds!", 0));
-        t.compTry(expect(.{"Index isn't out of bounds!"}, list.inner{}));
+        t.comptry(list.insertOrError("Index isn't out of bounds!", 0));
+        t.comptry(expect(.{"Index isn't out of bounds!"}, list.inner{}));
     }
 }
 
