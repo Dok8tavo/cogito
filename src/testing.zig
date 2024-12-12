@@ -42,8 +42,8 @@ pub inline fn Payload(error_union: anytype) type {
 pub inline fn ErrorSet(error_union: anytype) type {
     const info = compat.typeInfo(@TypeOf(error_union));
     return switch (info) {
-        .error_union_info => |eu| eu.error_set,
-        .error_set_info => @TypeOf(error_union),
+        .error_union => |eu| eu.error_set,
+        .error_set => @TypeOf(error_union),
         else => NoReturn,
     };
 }
@@ -56,6 +56,23 @@ pub inline fn compTry(error_union: anytype) Payload(error_union) {
 }
 
 pub inline fn compTryEqualStrings(a: []const u8, b: []const u8) void {
-    if (!std.mem.eql(u8, a, b))
-        compileError("`{s}` != `{s}`", .{ a, b });
+    if (a.len != b.len) compileError(
+        "The two compared strings aren't even the same length: {} and {}",
+        .{ a.len, b.len },
+    );
+
+    const array_a: *const [a.len]u8 = @ptrCast(a.ptr);
+    const array_b: *const [b.len]u8 = @ptrCast(b.ptr);
+    const vector_a: @Vector(a.len, u8) = array_a.*;
+    const vector_b: @Vector(b.len, u8) = array_b.*;
+    const equals = @reduce(.And, vector_a == vector_b);
+    if (!equals) compileError(
+        "The two compared strings don't have the same content:\na: \"{}\"\nb: \"{}\"",
+        .{ a, b },
+    );
+}
+
+pub inline fn comptryIsTrue(value: bool) void {
+    if (!value)
+        @compileError("Comptried `false`!");
 }

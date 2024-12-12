@@ -645,7 +645,10 @@ fn isEither(value: anytype, variants: []const []const u8) bool {
 }
 
 fn streq(a: []const u8, b: []const u8) bool {
-    return a.len == b.len and for (a, b) |c, d| {
-        if (c != d) break false;
-    } else true;
+    if (a.len != b.len) return false;
+    const array_a: *const [a.len]u8 = @ptrCast(a.ptr);
+    const array_b: *const [b.len]u8 = @ptrCast(b.ptr);
+    const vector_a: @Vector(a.len, u8) = array_a.*;
+    const vector_b: @Vector(b.len, u8) = array_b.*;
+    return @reduce(.And, vector_a == vector_b);
 }
