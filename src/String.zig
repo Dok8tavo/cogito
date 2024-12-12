@@ -93,6 +93,41 @@ pub inline fn from(any: anytype) String {
     };
 }
 
+pub inline fn eql(string: String, other: anytype) bool {
+    const other_string = String.from(other);
+    if (other_string.bytes.len != string.bytes.len)
+        return false;
+
+    const len = string.bytes.len;
+    const array1: *const [len]u8 = @ptrCast(string.bytes.ptr);
+    const array2: *const [len]u8 = @ptrCast(other_string.bytes.ptr);
+    const vector1: @Vector(len, u8) = array1.*;
+    const vector2: @Vector(len, u8) = array2.*;
+    return @reduce(.And, vector1 == vector2);
+}
+
+pub inline fn concat(string: String, other: anytype) String {
+    const other_string = String.from(other);
+    return String{ .bytes = string.bytes ++ other_string.bytes };
+}
+
+// == Testing ==
+test concat {
+    comptime {
+        const hello = String.from("Hello");
+        const hello_world = hello.concat(" world!");
+        t.comptryIsTrue(hello_world.eql("Hello world!"));
+    }
+}
+
+test eql {
+    comptime {
+        const hello_world = String.from("Hello world!");
+        t.comptryIsTrue(hello_world.eql("Hello world!"));
+        t.comptryIsTrue(!hello_world.eql("Goodbye world!"));
+    }
+}
+
 test from {
     comptime {
         const enum_literal = String.from(.hello_world);
