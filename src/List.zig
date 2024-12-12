@@ -21,7 +21,7 @@
 // SOFTWARE.
 //
 
-inner: type = compat.TypeFrom(.{ .@"struct" = .{ .is_tuple = true } }),
+backing_tuple: type = compat.TypeFrom(.{ .@"struct" = .{ .is_tuple = true } }),
 
 const compat = @import("compat.zig");
 const t = @import("testing.zig");
@@ -61,7 +61,7 @@ pub inline fn from(tuple: anytype) List {
 
     tuple_struct_info.fields = fields;
 
-    return List{ .inner = compat.TypeFrom(tuple_info) };
+    return List{ .backing_tuple = compat.TypeFrom(tuple_info) };
 }
 
 pub inline fn size(list: List) usize {
@@ -75,7 +75,7 @@ pub inline fn Get(list: List, index: usize) type {
 
 pub inline fn get(list: List, index: usize) ?Get(list, index) {
     return if (index < list.size())
-        @field(list.inner{}, list.info().fields[index].name)
+        @field(list.backing_tuple{}, list.info().fields[index].name)
     else
         null;
 }
@@ -94,7 +94,7 @@ pub inline fn set(list: *List, index: usize, value: anytype) void {
     if (index + 1 != list.size())
         new_info.fields = new_info.fields ++ list.info().fields[index + 1 ..];
 
-    list.* = List{ .inner = compat.TypeFrom(.{ .@"struct" = new_info }) };
+    list.* = List{ .backing_tuple = compat.TypeFrom(.{ .@"struct" = new_info }) };
 }
 
 pub inline fn setOrError(list: *List, index: usize, value: anytype) IndexError!void {
@@ -119,7 +119,7 @@ pub inline fn pop(list: *List) ?Pop(list) {
     return if (list.size() == 0) null else {
         const index = list.size() - 1;
         defer list.remove(index);
-        return (list.inner{})[index];
+        return (list.backing_tuple{})[index];
     };
 }
 
@@ -127,7 +127,7 @@ pub inline fn pop(list: *List) ?Pop(list) {
 pub inline fn insert(list: *List, item: anytype, index: usize) void {
     var fields: []const ItemInfo = &.{};
 
-    for (list.inner{}, 0..) |item2, index2| {
+    for (list.backing_tuple{}, 0..) |item2, index2| {
         if (index2 == index) {
             fields = fields ++ &[_]ItemInfo{.{
                 .default_value = @ptrCast(&item),
@@ -155,7 +155,7 @@ pub inline fn insert(list: *List, item: anytype, index: usize) void {
         }};
     }
 
-    list.* = List{ .inner = compat.TypeFrom(.{ .@"struct" = .{
+    list.* = List{ .backing_tuple = compat.TypeFrom(.{ .@"struct" = .{
         .fields = fields,
         .is_tuple = true,
     } }) };
@@ -185,7 +185,7 @@ pub inline fn remove(list: *List, index: usize) void {
         new_info.fields = new_info.fields ++ &[_]ItemInfo{field};
     }
 
-    list.* = List{ .inner = compat.TypeFrom(.{ .@"struct" = new_info }) };
+    list.* = List{ .backing_tuple = compat.TypeFrom(.{ .@"struct" = new_info }) };
 }
 
 pub inline fn removeOrError(list: *List, index: usize) IndexError!void {
@@ -202,7 +202,7 @@ pub inline fn removeOrLeave(list: *List, index: usize) void {
 pub inline fn concat(list: List, other: List) List {
     var new_list = list;
     for (0..other.size()) |i|
-        new_list.append((other.inner{})[i]);
+        new_list.append((other.backing_tuple{})[i]);
     return new_list;
 }
 
@@ -214,7 +214,7 @@ test getSet {
         const hello = list.getSet(0, .goodbye);
 
         t.comptry(expect(.hello, hello));
-        t.comptry(expect(.{ .goodbye, .world }, list.inner{}));
+        t.comptry(expect(.{ .goodbye, .world }, list.backing_tuple{}));
     }
 }
 
@@ -231,7 +231,7 @@ test set {
         var list = List.from(.{ 'l', 'o', 'u' });
         list.set(2, "l");
 
-        t.comptry(expect(.{ 'l', 'o', "l" }, list.inner{}));
+        t.comptry(expect(.{ 'l', 'o', "l" }, list.backing_tuple{}));
     }
 }
 
@@ -271,10 +271,10 @@ test removeOrLeave {
         var list = List.from(.{ .a, .b, .c });
 
         list.removeOrLeave(2);
-        t.comptry(expect(.{ .a, .b }, list.inner{}));
+        t.comptry(expect(.{ .a, .b }, list.backing_tuple{}));
 
         list.removeOrLeave(2);
-        t.comptry(expect(.{ .a, .b }, list.inner{}));
+        t.comptry(expect(.{ .a, .b }, list.backing_tuple{}));
     }
 }
 
@@ -283,10 +283,10 @@ test remove {
         var list = List.from(.{ "Hello", "How", "are", "you" });
 
         list.remove(2);
-        t.comptry(expect(.{ "Hello", "How", "you" }, list.inner{}));
+        t.comptry(expect(.{ "Hello", "How", "you" }, list.backing_tuple{}));
 
         list.remove(1);
-        t.comptry(expect(.{ "Hello", "you" }, list.inner{}));
+        t.comptry(expect(.{ "Hello", "you" }, list.backing_tuple{}));
     }
 }
 
@@ -297,7 +297,7 @@ test concat {
         const list3 = list1.concat(list2);
 
         t.comptry(expect(
-            list3.inner{},
+            list3.backing_tuple{},
             .{ 1, 2, 3, "viva", "l'Algérie" },
         ));
     }
@@ -340,11 +340,11 @@ test append {
 test insert {
     comptime {
         var list = List{};
-        t.comptry(expect(.{}, list.inner{}));
+        t.comptry(expect(.{}, list.backing_tuple{}));
 
         list.insert("Hello world!", 0);
 
-        t.comptry(expect(.{"Hello world!"}, list.inner{}));
+        t.comptry(expect(.{"Hello world!"}, list.backing_tuple{}));
     }
 }
 
@@ -370,10 +370,10 @@ test insertOrError {
         ));
 
         t.comptry(list.insertOrError("Index isn't out of bounds!", 0));
-        t.comptry(expect(.{"Index isn't out of bounds!"}, list.inner{}));
+        t.comptry(expect(.{"Index isn't out of bounds!"}, list.backing_tuple{}));
     }
 }
 
 inline fn info(comptime list: List) compat.Type.Struct {
-    return compat.typeInfo(list.inner).@"struct";
+    return compat.typeInfo(list.backing_tuple).@"struct";
 }

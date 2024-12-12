@@ -21,7 +21,7 @@
 // SOFTWARE.
 //
 
-dict: Dict = .{},
+backing_dict: Dict = .{},
 
 const std = @import("std");
 const t = @import("testing.zig");
@@ -36,24 +36,24 @@ pub inline fn from(items: anytype) Set {
 }
 
 pub inline fn has(set: Set, item: anytype) bool {
-    return set.dict.has(item);
+    return set.backing_dict.has(item);
 }
 
 pub inline fn size(set: Set) usize {
-    return set.dict.size();
+    return set.backing_dict.size();
 }
 
 // == Adding items ==
 pub inline fn add(set: *Set, item: anytype) void {
-    set.dict.add(item, {});
+    set.backing_dict.add(item, {});
 }
 
 pub inline fn addOrError(set: *Set, item: anytype) Dict.AddError!void {
-    try set.dict.addOrError(item, {});
+    try set.backing_dict.addOrError(item, {});
 }
 
 pub inline fn addOrLeave(set: *Set, item: anytype) void {
-    set.dict.addOrLeave(item, {});
+    set.backing_dict.addOrLeave(item, {});
 }
 
 pub inline fn addOrRemove(set: *Set, item: anytype) void {
@@ -62,21 +62,21 @@ pub inline fn addOrRemove(set: *Set, item: anytype) void {
 
 // == Removing items ==
 pub inline fn remove(set: *Set, item: anytype) void {
-    set.dict.remove(item);
+    set.backing_dict.remove(item);
 }
 
 pub inline fn removeOrError(set: *Set, item: anytype) Dict.RemoveError!void {
-    try set.dict.removeOrError(item);
+    try set.backing_dict.removeOrError(item);
 }
 
 pub inline fn removeOrLeave(set: *Set, item: anytype) void {
-    set.dict.removeOrLeave(item);
+    set.backing_dict.removeOrLeave(item);
 }
 
 // == Combining sets ==
 pub inline fn combine(set1: Set, set2: Set) Set {
     var combine_set = set1;
-    var iterator = set2.dict.iterateKeys();
+    var iterator = set2.backing_dict.iterateKeys();
 
     while (iterator.next()) |key|
         combine_set.add(key);
@@ -93,7 +93,7 @@ pub inline fn combineOrError(set1: Set, set2: Set) Dict.AddError!Set {
 
 pub inline fn combineOrLeave(set1: Set, set2: Set) Set {
     var combine_set = set1;
-    var iterator = set2.dict.iterateKeys();
+    var iterator = set2.backing_dict.iterateKeys();
 
     while (iterator.next()) |key|
         combine_set.addOrLeave(key);
@@ -103,7 +103,7 @@ pub inline fn combineOrLeave(set1: Set, set2: Set) Set {
 
 pub inline fn intersection(set1: Set, set2: Set) Set {
     var intersection_set = Set{};
-    var iterator = set1.dict.iterateKeys();
+    var iterator = set1.backing_dict.iterateKeys();
 
     while (iterator.next()) |key|
         if (set2.has(key))
@@ -113,7 +113,7 @@ pub inline fn intersection(set1: Set, set2: Set) Set {
 }
 
 pub inline fn isDisjoint(set1: Set, set2: Set) bool {
-    var iterator = set1.dict.iterateKeys();
+    var iterator = set1.backing_dict.iterateKeys();
 
     return while (iterator.next()) |key| {
         if (set2.has(key)) break false;

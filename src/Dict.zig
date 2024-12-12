@@ -21,7 +21,7 @@
 // SOFTWARE.
 //
 
-inner: type = compat.TypeFrom(.{ .@"struct" = .{} }),
+backing_struct: type = compat.TypeFrom(.{ .@"struct" = .{} }),
 
 const compat = @import("compat.zig");
 const std = @import("std");
@@ -59,7 +59,7 @@ pub inline fn from(kv_struct: anytype) Dict {
 
     kv_struct_info.fields = fields;
 
-    return Dict{ .inner = compat.TypeFrom(kv_info) };
+    return Dict{ .backing_struct = compat.TypeFrom(kv_info) };
 }
 
 pub inline fn size(dict: Dict) usize {
@@ -68,18 +68,18 @@ pub inline fn size(dict: Dict) usize {
 
 // == Accessing items ==
 pub inline fn has(dict: Dict, key: anytype) bool {
-    return @hasField(dict.inner, intoString(key));
+    return @hasField(dict.backing_struct, intoString(key));
 }
 
 pub inline fn Get(dict: anytype, key: anytype) type {
     return if (dict.has(key))
-        @TypeOf(@field(dict.inner{}, intoString(key)))
+        @TypeOf(@field(dict.backing_struct{}, intoString(key)))
     else
         t.NoReturn;
 }
 
 pub inline fn get(dict: Dict, key: anytype) ?Get(dict, key) {
-    return if (dict.has(key)) @field(dict.inner{}, intoString(key)) else null;
+    return if (dict.has(key)) @field(dict.backing_struct{}, intoString(key)) else null;
 }
 
 // == Adding items ==
@@ -110,7 +110,7 @@ pub inline fn add(dict: *Dict, key: anytype, value: anytype) void {
         .type = Value,
     }};
 
-    dict.inner = compat.TypeFrom(.{ .@"struct" = @"struct" });
+    dict.backing_struct = compat.TypeFrom(.{ .@"struct" = @"struct" });
 }
 
 // == Removing items ==
@@ -126,7 +126,7 @@ pub inline fn remove(dict: *Dict, key: anytype) void {
         }
     } else @"struct".fields = dict.info().fields[0..new_length];
 
-    dict.inner = compat.TypeFrom(.{ .@"struct" = @"struct" });
+    dict.backing_struct = compat.TypeFrom(.{ .@"struct" = @"struct" });
 }
 
 pub inline fn removeOrError(dict: *Dict, key: anytype) RemoveError!void {
@@ -143,7 +143,7 @@ pub inline fn removeOrLeave(dict: *Dict, key: anytype) void {
 // == Popping items ==
 pub inline fn pop(dict: *Dict, key: anytype) Get(dict, key) {
     defer dict.remove(key);
-    return @field(dict.inner{}, intoString(key));
+    return @field(dict.backing_struct{}, intoString(key));
 }
 
 pub inline fn popOrError(dict: *Dict, key: anytype) RemoveError!Get(dict, key) {
@@ -245,7 +245,7 @@ pub const Iterator = struct {
         if (iterator.dict.size() <= iterator.index) return null;
 
         const key = iterator.dict.info().fields[iterator.index].name;
-        return .{ key, @field((iterator.dict.inner{}), key) };
+        return .{ key, @field((iterator.dict.backing_struct{}), key) };
     }
 
     pub inline fn next(iterator: *Iterator) ?Peek(iterator.*) {
@@ -265,7 +265,7 @@ test add {
     comptime {
         var dict = Dict{};
         dict.add(.key, "value");
-        t.comptryEqualStrings("value", @field(dict.inner{}, "key"));
+        t.comptryEqualStrings("value", @field(dict.backing_struct{}, "key"));
     }
 }
 
@@ -278,8 +278,8 @@ test addOrError {
         t.comptry(std.testing.expectError(AddError.KeyAlreadyExists, add_key1));
         t.comptry(std.testing.expectEqual(void{}, add_key2));
 
-        t.comptry(std.testing.expectEqual(1, (dict.inner{}).key1));
-        t.comptry(std.testing.expectEqual(3, (dict.inner{}).key2));
+        t.comptry(std.testing.expectEqual(1, (dict.backing_struct{}).key1));
+        t.comptry(std.testing.expectEqual(3, (dict.backing_struct{}).key2));
     }
 }
 
@@ -289,8 +289,8 @@ test addOrLeave {
         dict.addOrLeave(.key1, 2); // does nothing
         dict.addOrLeave(.key2, 3);
 
-        t.comptry(std.testing.expectEqual(1, (dict.inner{}).key1));
-        t.comptry(std.testing.expectEqual(3, (dict.inner{}).key2));
+        t.comptry(std.testing.expectEqual(1, (dict.backing_struct{}).key1));
+        t.comptry(std.testing.expectEqual(3, (dict.backing_struct{}).key2));
     }
 }
 
@@ -300,8 +300,8 @@ test addOrReplace {
         dict.addOrReplace(.key, 2);
         dict.addOrReplace(.not_key, 3);
 
-        t.comptry(std.testing.expectEqual(2, (dict.inner{}).key));
-        t.comptry(std.testing.expectEqual(3, (dict.inner{}).not_key));
+        t.comptry(std.testing.expectEqual(2, (dict.backing_struct{}).key));
+        t.comptry(std.testing.expectEqual(3, (dict.backing_struct{}).not_key));
     }
 }
 
@@ -309,9 +309,9 @@ test remove {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.comptryIsTrue(@hasField(dict.inner, "key"));
+        t.comptryIsTrue(@hasField(dict.backing_struct, "key"));
         dict.remove(.key);
-        t.comptryIsTrue(!@hasField(dict.inner, "key"));
+        t.comptryIsTrue(!@hasField(dict.backing_struct, "key"));
     }
 }
 
@@ -319,14 +319,14 @@ test removeOrError {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.comptryIsTrue(@hasField(dict.inner, "key"));
-        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
+        t.comptryIsTrue(@hasField(dict.backing_struct, "key"));
+        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
 
         const remove_key = dict.removeOrError(.key);
         const remove_not_key = dict.removeOrError(.not_key);
 
-        t.comptryIsTrue(!@hasField(dict.inner, "key"));
-        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
+        t.comptryIsTrue(!@hasField(dict.backing_struct, "key"));
+        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
 
         t.comptry(std.testing.expectEqual(void{}, remove_key));
         t.comptry(std.testing.expectError(RemoveError.KeyDoesNotExist, remove_not_key));
@@ -337,14 +337,14 @@ test removeOrLeave {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.comptryIsTrue(@hasField(dict.inner, "key"));
-        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
+        t.comptryIsTrue(@hasField(dict.backing_struct, "key"));
+        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
 
         dict.removeOrLeave(.key);
         dict.removeOrLeave(.not_key);
 
-        t.comptryIsTrue(!@hasField(dict.inner, "key"));
-        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
+        t.comptryIsTrue(!@hasField(dict.backing_struct, "key"));
+        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
     }
 }
 
@@ -352,9 +352,9 @@ test set {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.comptry(std.testing.expectEqual(1, (dict.inner{}).key));
+        t.comptry(std.testing.expectEqual(1, (dict.backing_struct{}).key));
         dict.set(.key, "not even a `comptime_int`");
-        t.comptryEqualStrings("not even a `comptime_int`", (dict.inner{}).key);
+        t.comptryEqualStrings("not even a `comptime_int`", (dict.backing_struct{}).key);
     }
 }
 
@@ -362,14 +362,14 @@ test setOrError {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.comptry(std.testing.expectEqual(1, (dict.inner{}).key));
-        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
+        t.comptry(std.testing.expectEqual(1, (dict.backing_struct{}).key));
+        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
 
         const set_key = dict.setOrError(.key, 2);
         const set_not_key = dict.setOrError(.not_key, 2);
 
-        t.comptry(std.testing.expectEqual(2, (dict.inner{}).key));
-        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
+        t.comptry(std.testing.expectEqual(2, (dict.backing_struct{}).key));
+        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
 
         t.comptry(std.testing.expectEqual(void{}, set_key));
         t.comptry(std.testing.expectError(RemoveError.KeyDoesNotExist, set_not_key));
@@ -380,14 +380,14 @@ test setOrLeave {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.comptry(std.testing.expectEqual(1, (dict.inner{}).key));
-        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
+        t.comptry(std.testing.expectEqual(1, (dict.backing_struct{}).key));
+        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
 
         dict.setOrLeave(.key, 2);
         dict.setOrLeave(.not_key, 2);
 
-        t.comptry(std.testing.expectEqual(2, (dict.inner{}).key));
-        t.comptryIsTrue(!@hasField(dict.inner, "not_key"));
+        t.comptry(std.testing.expectEqual(2, (dict.backing_struct{}).key));
+        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
     }
 }
 
@@ -576,5 +576,5 @@ inline fn intoString(comptime any: anytype) []const u8 {
 }
 
 inline fn info(comptime dict: Dict) compat.Type.Struct {
-    return compat.typeInfo(dict.inner).@"struct";
+    return compat.typeInfo(dict.backing_struct).@"struct";
 }
