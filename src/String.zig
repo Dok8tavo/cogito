@@ -21,18 +21,4 @@
 // SOFTWARE.
 //
 
-const std = @import("std");
-
-pub const testing = @import("testing.zig");
-
-pub const Dict = @import("Dict.zig");
-pub const List = @import("List.zig");
-pub const String = @import("String.zig");
-pub const StringSet = @import("StringSet.zig");
-
-test "all" {
-    _ = Dict;
-    _ = List;
-    _ = String;
-    _ = StringSet;
-}
+bytes: []const u8 = "",
