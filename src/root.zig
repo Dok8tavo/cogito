@@ -27,10 +27,10 @@ pub const testing = @import("testing.zig");
 
 pub const List = @import("List.zig");
 pub const Dict = @import("Dict.zig");
-pub const Set = @import("Set.zig");
+pub const StringSet = @import("StringSet.zig");
 
 test "all" {
     _ = List;
     _ = Dict;
-    _ = Set;
+    _ = StringSet;
 }
