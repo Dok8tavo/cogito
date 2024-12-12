@@ -25,6 +25,7 @@ const std = @import("std");
 const t = @import("testing.zig");
 
 const StdType = std.builtin.Type;
+const EnumLiteral = @TypeOf(.enum_literal);
 
 pub inline fn TypeFrom(info: Type) type {
     return @Type(info.intoStd());
@@ -61,82 +62,82 @@ pub const Type = union(enum) {
     enum_literal: void,
 
     pub inline fn fromStd(std_info: StdType) Type {
-        return if (isEither(std_info, &.{ "type", "Type" }))
+        return if (isEither(std_info, .{ .type, .Type }))
             .type
-        else if (isEither(std_info, &.{ "void", "Void" }))
+        else if (isEither(std_info, .{ .void, .Void }))
             .void
-        else if (isEither(std_info, &.{ "bool", "Bool" }))
+        else if (isEither(std_info, .{ .bool, .Bool }))
             .bool
-        else if (isEither(std_info, &.{ "noreturn", "NoReturn" }))
+        else if (isEither(std_info, .{ .noreturn, .NoReturn }))
             .noreturn
-        else if (isEither(std_info, &.{ "int", "Int" })) Type{
-            .int = eitherUnionAccess(std_info, &.{ "int", "Int" }),
-        } else if (isEither(std_info, &.{ "float", "Float" })) Type{
-            .float = eitherUnionAccess(std_info, &.{ "float", "Float" }),
-        } else if (isEither(std_info, &.{ "pointer", "Pointer" })) Type{
-            .pointer = Pointer.fromStd(eitherUnionAccess(std_info, &.{ "pointer", "Pointer" })),
-        } else if (isEither(std_info, &.{ "array", "Array" })) Type{
-            .array = Array.fromStd(eitherUnionAccess(std_info, &.{ "array", "Array" })),
-        } else if (isEither(std_info, &.{ "struct", "Struct" })) Type{
-            .@"struct" = Struct.fromStd(eitherUnionAccess(std_info, &.{ "struct", "Struct" })),
-        } else if (isEither(std_info, &.{ "comptime_float", "ComptimeFloat" }))
+        else if (isEither(std_info, .{ .int, .Int })) Type{
+            .int = eitherUnionAccess(std_info, .{ .int, .Int }),
+        } else if (isEither(std_info, .{ .float, .Float })) Type{
+            .float = eitherUnionAccess(std_info, .{ .float, .Float }),
+        } else if (isEither(std_info, .{ .pointer, .Pointer })) Type{
+            .pointer = Pointer.fromStd(eitherUnionAccess(std_info, .{ .pointer, .Pointer })),
+        } else if (isEither(std_info, .{ .array, .Array })) Type{
+            .array = Array.fromStd(eitherUnionAccess(std_info, .{ .array, .Array })),
+        } else if (isEither(std_info, .{ .@"struct", .Struct })) Type{
+            .@"struct" = Struct.fromStd(eitherUnionAccess(std_info, .{ .@"struct", .Struct })),
+        } else if (isEither(std_info, .{ .comptime_float, .ComptimeFloat }))
             .comptime_float
-        else if (isEither(std_info, &.{ "comptime_int", "ComptimeInt" }))
+        else if (isEither(std_info, .{ .comptime_int, .ComptimeInt }))
             .comptime_int
-        else if (isEither(std_info, &.{ "undefined", "Undefined" }))
+        else if (isEither(std_info, .{ .undefined, .Undefined }))
             .undefined
-        else if (isEither(std_info, &.{ "null", "Null" }))
+        else if (isEither(std_info, .{ .null, .Null }))
             .null
-        else if (isEither(std_info, &.{ "optional", "Optional" })) Type{
-            .optional = eitherUnionAccess(std_info, &.{ "optional", "Optional" }),
-        } else if (isEither(std_info, &.{ "error_union", "ErrorUnion" })) Type{
-            .error_union = eitherUnionAccess(std_info, &.{ "error_union", "ErrorUnion" }),
-        } else if (isEither(std_info, &.{ "error_set", "ErrorSet" })) Type{
-            .error_set = eitherUnionAccess(std_info, &.{ "error_set", "ErrorSet" }),
-        } else if (isEither(std_info, &.{ "enum", "Enum" })) Type{
-            .@"enum" = Enum.fromStd(eitherUnionAccess(std_info, &.{ "enum", "Enum" })),
-        } else if (isEither(std_info, &.{ "union", "Union" })) Type{
-            .@"union" = Union.fromStd(eitherUnionAccess(std_info, &.{ "union", "Union" })),
-        } else if (isEither(std_info, &.{ "fn", "Fn" })) Type{
-            .@"fn" = Fn.fromStd(eitherUnionAccess(std_info, &.{ "fn", "Fn" })),
-        } else if (isEither(std_info, &.{ "opaque", "Opaque" })) Type{
-            .@"opaque" = eitherUnionAccess(std_info, &.{ "opaque", "Opaque" }),
-        } else if (isEither(std_info, &.{ "frame", "Frame" })) Type{
-            .frame = eitherUnionAccess(std_info, &.{ "frame", "Frame" }),
-        } else if (isEither(std_info, &.{ "anyframe", "AnyFrame" })) Type{
-            .@"anyframe" = eitherUnionAccess(std_info, &.{ "anyframe", "AnyFrame" }),
-        } else if (isEither(std_info, &.{ "vector", "Vector" })) Type{
-            .vector = eitherUnionAccess(std_info, &.{ "vector", "Vector" }),
+        else if (isEither(std_info, .{ .optional, .Optional })) Type{
+            .optional = eitherUnionAccess(std_info, .{ .optional, .Optional }),
+        } else if (isEither(std_info, .{ .error_union, .ErrorUnion })) Type{
+            .error_union = eitherUnionAccess(std_info, .{ .error_union, .ErrorUnion }),
+        } else if (isEither(std_info, .{ .error_set, .ErrorSet })) Type{
+            .error_set = eitherUnionAccess(std_info, .{ .error_set, .ErrorSet }),
+        } else if (isEither(std_info, .{ .@"enum", .Enum })) Type{
+            .@"enum" = Enum.fromStd(eitherUnionAccess(std_info, .{ .@"enum", .Enum })),
+        } else if (isEither(std_info, .{ .@"union", .Union })) Type{
+            .@"union" = Union.fromStd(eitherUnionAccess(std_info, .{ .@"union", .Union })),
+        } else if (isEither(std_info, .{ .@"fn", .Fn })) Type{
+            .@"fn" = Fn.fromStd(eitherUnionAccess(std_info, .{ .@"fn", .Fn })),
+        } else if (isEither(std_info, .{ .@"opaque", .Opaque })) Type{
+            .@"opaque" = eitherUnionAccess(std_info, .{ .@"opaque", .Opaque }),
+        } else if (isEither(std_info, .{ .frame, .Frame })) Type{
+            .frame = eitherUnionAccess(std_info, .{ .frame, .Frame }),
+        } else if (isEither(std_info, .{ .@"anyframe", .AnyFrame })) Type{
+            .@"anyframe" = eitherUnionAccess(std_info, .{ .@"anyframe", .AnyFrame }),
+        } else if (isEither(std_info, .{ .vector, .Vector })) Type{
+            .vector = eitherUnionAccess(std_info, .{ .vector, .Vector }),
         } else //if (isEither(info, &.{ "enum_literal", "EnumLiteral"}))
         .enum_literal;
     }
 
     pub inline fn intoStd(info: Type) StdType {
-        return eitherUnionVariant(StdType, &switch (info) {
-            .type => .{ "type", "Type" },
-            .void => .{ "void", "Void" },
-            .bool => .{ "bool", "Bool" },
-            .noreturn => .{ "noreturn", "NoReturn" },
-            .int => .{ "int", "Int" },
-            .float => .{ "float", "Float" },
-            .pointer => .{ "pointer", "Pointer" },
-            .array => .{ "array", "Array" },
-            .@"struct" => .{ "struct", "Struct" },
-            .comptime_float => .{ "comptime_float", "ComptimeFloat" },
-            .comptime_int => .{ "comptime_int", "ComptimeInt" },
-            .undefined => .{ "undefined", "Undefined" },
-            .null => .{ "null", "Null" },
-            .optional => .{ "optional", "Optional" },
-            .error_union => .{ "error_union", "ErrorUnion" },
-            .error_set => .{ "error_set", "ErrorSet" },
-            .@"enum" => .{ "enum", "Enum" },
-            .@"union" => .{ "union", "Union" },
-            .@"fn" => .{ "fn", "Fn" },
-            .@"opaque" => .{ "opaque", "Opaque" },
-            .frame => .{ "frame", "Frame" },
-            .@"anyframe" => .{ "anyframe", "Anyframe" },
-            .vector => .{ "vector", "Vector" },
-            .enum_literal => .{ "enum_literal", "EnumLiteral" },
+        return eitherUnionVariant(StdType, switch (info) {
+            .type => .{ .type, .Type },
+            .void => .{ .void, .Void },
+            .bool => .{ .bool, .Bool },
+            .noreturn => .{ .noreturn, .NoReturn },
+            .int => .{ .int, .Int },
+            .float => .{ .float, .Float },
+            .pointer => .{ .pointer, .Pointer },
+            .array => .{ .array, .Array },
+            .@"struct" => .{ .@"struct", .Struct },
+            .comptime_float => .{ .comptime_float, .ComptimeFloat },
+            .comptime_int => .{ .comptime_int, .ComptimeInt },
+            .undefined => .{ .undefined, .Undefined },
+            .null => .{ .null, .Null },
+            .optional => .{ .optional, .Optional },
+            .error_union => .{ .error_union, .ErrorUnion },
+            .error_set => .{ .error_set, .ErrorSet },
+            .@"enum" => .{ .@"enum", .Enum },
+            .@"union" => .{ .@"union", .Union },
+            .@"fn" => .{ .@"fn", .Fn },
+            .@"opaque" => .{ .@"opaque", .Opaque },
+            .frame => .{ .frame, .Frame },
+            .@"anyframe" => .{ .@"anyframe", .Anyframe },
+            .vector => .{ .vector, .Vector },
+            .enum_literal => .{ .enum_literal, .EnumLiteral },
         }, switch (info) {
             .type => {},
             .void => {},
@@ -332,67 +333,67 @@ pub const Type = union(enum) {
             vertex,
 
             pub inline fn fromStd(std_info: std.builtin.CallingConvention) CallingConvention {
-                return if (isEither(std_info, &.{ "unspecified", "Unspecified" }))
+                return if (isEither(std_info, .{ .unspecified, .Unspecified }))
                     .unspecified
-                else if (isEither(std_info, &.{ "c", "C" }))
+                else if (isEither(std_info, .{ .c, .C }))
                     .c
-                else if (isEither(std_info, &.{ "naked", "Naked" }))
+                else if (isEither(std_info, .{ .naked, .Naked }))
                     .naked
-                else if (isEither(std_info, &.{ "async", "Async" }))
+                else if (isEither(std_info, .{ .@"async", .Async }))
                     .@"async"
-                else if (isEither(std_info, &.{ "inline", "Inline" }))
+                else if (isEither(std_info, .{ .@"inline", .Inline }))
                     .@"inline"
-                else if (isEither(std_info, &.{ "interrupt", "Interrupt" }))
+                else if (isEither(std_info, .{ .interrupt, .Interrupt }))
                     .interrupt
-                else if (isEither(std_info, &.{ "signal", "Signal" }))
+                else if (isEither(std_info, .{ .signal, .Signal }))
                     .signal
-                else if (isEither(std_info, &.{ "stdcall", "Stdcall" }))
+                else if (isEither(std_info, .{ .stdcall, .Stdcall }))
                     .stdcall
-                else if (isEither(std_info, &.{ "fastcall", "Fastcall" }))
+                else if (isEither(std_info, .{ .fastcall, .Fastcall }))
                     .fastcall
-                else if (isEither(std_info, &.{ "vectorcall", "Vectorcall" }))
+                else if (isEither(std_info, .{ .vectorcall, .Vectorcall }))
                     .vectorcall
-                else if (isEither(std_info, &.{ "thiscall", "Thiscall" }))
+                else if (isEither(std_info, .{ .thiscall, .Thiscall }))
                     .thiscall
-                else if (isEither(std_info, &.{ "apcs", "APCS" }))
+                else if (isEither(std_info, .{ .apcs, .APCS }))
                     .apcs
-                else if (isEither(std_info, &.{ "aapcs", "AAPCS" }))
+                else if (isEither(std_info, .{ .aapcs, .AAPCS }))
                     .aapcs
-                else if (isEither(std_info, &.{ "aapcsvfp", "AAPCSVFP" }))
+                else if (isEither(std_info, .{ .aapcsvfp, .AAPCSVFP }))
                     .aapcsvfp
-                else if (isEither(std_info, &.{ "sys_v", "SysV" }))
+                else if (isEither(std_info, .{ .sys_v, .SysV }))
                     .sys_v
-                else if (isEither(std_info, &.{ "win64", "Win64" }))
+                else if (isEither(std_info, .{ .win64, .Win64 }))
                     .win64
-                else if (isEither(std_info, &.{ "kernel", "Kernel" }))
+                else if (isEither(std_info, .{ .kernel, .Kernel }))
                     .kernel
-                else if (isEither(std_info, &.{ "fragment", "Fragment" }))
+                else if (isEither(std_info, .{ .fragment, .Fragment }))
                     .fragment
-                else //if (isEither(std_info, &.{ "vertex", "Vertex" }))
+                else //if (isEither(std_info, .{ .vertex, .Vertex }))
                     .vertex;
             }
 
             pub inline fn intoStd(info: CallingConvention) std.builtin.CallingConvention {
-                return eitherEnumVariant(std.builtin.CallingConvention, &switch (info) {
-                    .unspecified => .{ "unspecified", "Unspecified" },
-                    .c => .{ "c", "C" },
-                    .naked => .{ "naked", "Naked" },
-                    .@"async" => .{ "async", "Async" },
-                    .@"inline" => .{ "inline", "Inline" },
-                    .interrupt => .{ "interrupt", "Interrupt" },
-                    .signal => .{ "signal", "Signal" },
-                    .stdcall => .{ "stdcall", "Stdcall" },
-                    .fastcall => .{ "fastcall", "Fastcall" },
-                    .vectorcall => .{ "vectorcall", "Vectorcall" },
-                    .thiscall => .{ "thiscall", "Thiscall" },
-                    .apcs => .{ "apcs", "APCS" },
-                    .aapcs => .{ "aapcs", "AAPCS" },
-                    .aapcsvfp => .{ "aapcsvfp", "AAPCSVFP" },
-                    .sys_v => .{ "sys_v", "SysV" },
-                    .win64 => .{ "win64", "Win64" },
-                    .kernel => .{ "kernel", "Kernel" },
-                    .fragment => .{ "fragment", "Fragment" },
-                    .vertex => .{ "vertex", "Vertex" },
+                return eitherEnumVariant(std.builtin.CallingConvention, switch (info) {
+                    .unspecified => .{ .unspecified, .Unspecified },
+                    .c => .{ .c, .C },
+                    .naked => .{ .naked, .Naked },
+                    .@"async" => .{ .@"async", .Async },
+                    .@"inline" => .{ .@"inline", .Inline },
+                    .interrupt => .{ .interrupt, .Interrupt },
+                    .signal => .{ .signal, .Signal },
+                    .stdcall => .{ .stdcall, .Stdcall },
+                    .fastcall => .{ .fastcall, .Fastcall },
+                    .vectorcall => .{ .vectorcall, .Vectorcall },
+                    .thiscall => .{ .thiscall, .Thiscall },
+                    .apcs => .{ .apcs, .APCS },
+                    .aapcs => .{ .aapcs, .AAPCS },
+                    .aapcsvfp => .{ .aapcsvfp, .AAPCSVFP },
+                    .sys_v => .{ .sys_v, .SysV },
+                    .win64 => .{ .win64, .Win64 },
+                    .kernel => .{ .kernel, .Kernel },
+                    .fragment => .{ .fragment, .Fragment },
+                    .vertex => .{ .vertex, .Vertex },
                 });
             }
         };
@@ -519,9 +520,9 @@ pub const Type = union(enum) {
         @"extern",
 
         pub inline fn fromStd(std_info: StdType.ContainerLayout) Layout {
-            return if (isEither(std_info, &.{ "auto", "Auto" }))
+            return if (isEither(std_info, .{ .auto, .Auto }))
                 .auto
-            else if (isEither(std_info, &.{ "packed", "Packed" }))
+            else if (isEither(std_info, .{ .@"packed", .Packed }))
                 .@"packed"
             else //if (isEither(info, &.{"extern", "Extern"}))
                 .@"extern";
@@ -529,9 +530,9 @@ pub const Type = union(enum) {
 
         pub inline fn intoStd(info: Layout) StdType.ContainerLayout {
             return eitherEnumVariant(StdType.ContainerLayout, &switch (info) {
-                .auto => .{ "auto", "Auto" },
-                .@"packed" => .{ "packed", "Packed" },
-                .@"extern" => .{ "extern", "Extern" },
+                .auto => .{ .auto, .Auto },
+                .@"packed" => .{ .@"packed", .Packed },
+                .@"extern" => .{ .@"extern", .Extern },
             });
         }
     };
@@ -579,11 +580,11 @@ pub const Type = union(enum) {
             slice,
 
             pub inline fn fromStd(std_info: StdType.Pointer.Size) Size {
-                return if (isEither(std_info, &.{ "c", "C" }))
+                return if (isEither(std_info, .{ .c, .C }))
                     .c
-                else if (isEither(std_info, &.{ "many", "Many" }))
+                else if (isEither(std_info, .{ .many, .Many }))
                     .many
-                else if (isEither(std_info, &.{ "one", "One" }))
+                else if (isEither(std_info, .{ .one, .One }))
                     .one
                 else //if (isEither(info, &.{ "slice", "Slice" }))
                     .slice;
@@ -591,56 +592,57 @@ pub const Type = union(enum) {
 
             pub inline fn intoStd(info: Size) StdType.Pointer.Size {
                 return eitherEnumVariant(StdType.Pointer.Size, &switch (info) {
-                    .c => .{ "c", "C" },
-                    .many => .{ "many", "Many" },
-                    .one => .{ "one", "One" },
-                    .slice => .{ "slice", "Slice" },
+                    .c => .{ .c, .C },
+                    .many => .{ .many, .Many },
+                    .one => .{ .one, .One },
+                    .slice => .{ .slice, .Slice },
                 });
             }
         };
     };
 };
 
-fn selectVariant(SumType: type, variants: []const []const u8) []const u8 {
+fn selectVariant(SumType: type, variants: anytype) []const u8 {
     var selected_variant: ?[]const u8 = null;
     for (variants) |v| {
-        if (@hasField(SumType, v)) {
+        const variant_name = @tagName(v);
+        if (@hasField(SumType, variant_name)) {
             if (selected_variant) |sv| t.compileError(
                 "The sum type `{s}` has both `.{s}` and `.{s}` variants!",
-                .{ @typeName(SumType), sv, v },
+                .{ @typeName(SumType), sv, variant_name },
             );
 
-            selected_variant = v;
+            selected_variant = variant_name;
         }
     }
 
     return selected_variant orelse t.compileError("The sum type `{s}` has none of the variants selected!", .{@typeName(SumType)});
 }
 
-fn eitherEnumVariant(Enum: type, variants: []const []const u8) Enum {
+fn eitherEnumVariant(Enum: type, variants: anytype) Enum {
     return @field(Enum, selectVariant(Enum, variants));
 }
 
-fn eitherUnionVariant(Union: type, variants: []const []const u8, payload: anytype) Union {
+fn eitherUnionVariant(Union: type, variants: anytype, payload: anytype) Union {
     return @unionInit(Union, selectVariant(Union, variants), payload);
 }
 
 fn eitherUnionAccess(
     union_value: anytype,
-    variants: []const []const u8,
+    variants: anytype,
 ) EitherUnionAccess(@TypeOf(union_value), variants) {
     return @field(union_value, selectVariant(@TypeOf(union_value), variants));
 }
 
-fn EitherUnionAccess(Union: type, variants: []const []const u8) type {
+fn EitherUnionAccess(Union: type, variants: anytype) type {
     return @TypeOf(@field(@as(Union, undefined), selectVariant(Union, variants)));
 }
 
-fn isEither(value: anytype, variants: []const []const u8) bool {
+fn isEither(value: anytype, variants: anytype) bool {
     const tag = @tagName(value);
     @setEvalBranchQuota(10_000);
     return for (variants) |variant| {
-        if (streq(tag, variant)) break true;
+        if (streq(tag, @tagName(variant))) break true;
     } else false;
 }
 
