@@ -24,6 +24,7 @@
 info: StructInfo = .{},
 
 const compat = @import("compat.zig");
+const std = @import("std");
 const t = @import("testing.zig");
 
 const FieldInfo = StructInfo.Field;
@@ -59,7 +60,7 @@ pub inline fn addField(gen: *StructGen, field: FieldInfo) void {
 }
 
 pub inline fn getField(gen: *StructGen, field_name: []const u8) ?FieldInfo {
-    return for (0..gen.info.fields) |index| {
+    return for (0..gen.info.fields.len) |index| {
         if (t.comptimeEqualStrings(field_name, gen.info.fields[index].name))
             break gen.info.fields[index];
     } else null;
@@ -82,6 +83,22 @@ pub inline fn setField(gen: *StructGen, field_name: []const u8, new: anytype) vo
             return;
         }
     } else t.compileError("Couldn't find field named `{s}`!", .{field_name});
+}
+
+test getField {
+    comptime {
+        var struct_gen = StructGen{};
+        struct_gen.addField(.{ .name = "my field", .type = u8 });
+
+        const field: FieldInfo = t.comptry(struct_gen.getField("my field"));
+        t.comptry(field.alignment == null);
+        t.comptry(field.default_value == null);
+        t.comptry(!field.is_comptime);
+        t.comptryEqualStrings("my field", field.name);
+        t.comptry(field.type == u8);
+
+        t.comptry(struct_gen.getField("not my field") == null);
+    }
 }
 
 test addField {
