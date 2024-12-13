@@ -56,17 +56,7 @@ pub inline fn comptry(error_union: anytype) Payload(error_union) {
 }
 
 pub inline fn comptryEqualStrings(a: []const u8, b: []const u8) void {
-    if (a.len != b.len) compileError(
-        "The two compared strings aren't even the same length: {} and {}",
-        .{ a.len, b.len },
-    );
-
-    const array_a: *const [a.len]u8 = @ptrCast(a.ptr);
-    const array_b: *const [b.len]u8 = @ptrCast(b.ptr);
-    const vector_a: @Vector(a.len, u8) = array_a.*;
-    const vector_b: @Vector(b.len, u8) = array_b.*;
-    const equals = @reduce(.And, vector_a == vector_b);
-    if (!equals) compileError(
+    if (!comptimeEqualStrings(a, b)) compileError(
         "The two compared strings don't have the same content:\na: \"{s}\"\nb: \"{s}\"",
         .{ a, b },
     );
@@ -75,4 +65,13 @@ pub inline fn comptryEqualStrings(a: []const u8, b: []const u8) void {
 pub inline fn comptryIsTrue(value: bool) void {
     if (!value)
         @compileError("Comptried `false`!");
+}
+
+pub inline fn comptimeEqualStrings(a: []const u8, b: []const u8) bool {
+    if (a.len != b.len) return false;
+    const array_a: *const [a.len]u8 = @ptrCast(a.ptr);
+    const array_b: *const [b.len]u8 = @ptrCast(b.ptr);
+    const vector_a: @Vector(a.len, u8) = array_a.*;
+    const vector_b: @Vector(b.len, u8) = array_b.*;
+    return @reduce(.And, vector_a == vector_b);
 }
