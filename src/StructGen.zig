@@ -58,6 +58,13 @@ pub inline fn addField(gen: *StructGen, field: FieldInfo) void {
     gen.info.fields = gen.info.fields ++ &[_]FieldInfo{field};
 }
 
+pub inline fn getField(gen: *StructGen, field_name: []const u8) ?*FieldInfo {
+    return for (0..gen.info.fields) |index| {
+        if (t.comptimeEqualStrings(field_name, gen.info.fields[index].name))
+            break &gen.info.fields[index];
+    } else null;
+}
+
 test addField {
     comptime {
         var struct_gen = StructGen{};
