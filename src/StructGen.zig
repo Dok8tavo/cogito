@@ -72,6 +72,13 @@ pub inline fn addOrSetField(gen: *StructGen, field: FieldInfo) void {
 }
 
 // == Access field ==
+pub inline fn hasField(gen: StructGen, field_name: []const u8) bool {
+    return for (0..gen.info.fields.len) |index| {
+        if (t.comptimeEqualStrings(field_name, gen.info.fields[index].name))
+            break true;
+    } else false;
+}
+
 pub inline fn getField(gen: *StructGen, field_name: []const u8) ?FieldInfo {
     return for (0..gen.info.fields.len) |index| {
         if (t.comptimeEqualStrings(field_name, gen.info.fields[index].name))
@@ -109,6 +116,16 @@ pub inline fn setField(gen: *StructGen, field_name: []const u8, new: anytype) vo
 }
 
 // == Testing ==
+test hasField {
+    comptime {
+        var struct_gen = StructGen{};
+        struct_gen.addField(.{ .name = "my field", .type = bool });
+        t.comptry(struct_gen.hasField("my field"));
+        t.comptry(!struct_gen.hasField("my other field"));
+        struct_gen.addField(.{ .name = "my other field", .type = bool });
+        t.comptry(struct_gen.hasField("my other field"));
+    }
+}
 test addFieldOrError {
     comptime {
         var struct_gen = StructGen{};
