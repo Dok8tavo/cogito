@@ -24,26 +24,49 @@
 info: StructInfo = .{},
 
 const compat = @import("compat.zig");
+const t = @import("testing.zig");
 
-const StructInfo = compat.Type.Struct;
+const FieldInfo = StructInfo.Field;
+const Layout = compat.Type.Layout;
 const StructGen = @This();
+const StructInfo = compat.Type.Struct;
 
 pub inline fn Type(gen: StructGen) type {
     return compat.TypeFrom(.{ .@"struct" = gen.info });
 }
 
-pub inline fn setLayout(gen: *StructGen, layout: compat.Type.Layout) void {
+// == Layout ==
+pub inline fn setLayout(gen: *StructGen, layout: Layout) void {
     gen.info.layout = layout;
 }
 
-pub inline fn getLayout(gen: StructGen) compat.Type.Layout {
+pub inline fn getLayout(gen: StructGen) Layout {
     return gen.info.layout;
 }
 
+// == Backing integer ==
 pub inline fn setBackingInteger(gen: *StructGen, backing_integer: ?type) void {
     gen.info.backing_integer = backing_integer;
 }
 
 pub inline fn getBackingInteger(gen: StructGen) ?type {
     return gen.info.backing_integer;
+}
+
+// == Add field ==
+pub inline fn addField(gen: *StructGen, field: FieldInfo) void {
+    gen.info.fields = gen.info.fields ++ &[_]FieldInfo{field};
+}
+
+test addField {
+    comptime {
+        var struct_gen = StructGen{};
+        const EmptyStruct = struct_gen.Type();
+
+        struct_gen.addField(.{ .name = "some_field", .type = void });
+        const NonEmptyStruct = struct_gen.Type();
+
+        t.comptryIsTrue(!@hasField(EmptyStruct, "some_field"));
+        t.comptryIsTrue(@hasField(NonEmptyStruct, "some_field"));
+    }
 }
