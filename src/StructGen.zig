@@ -21,18 +21,13 @@
 // SOFTWARE.
 //
 
-const std = @import("std");
+info: StructInfo = .{},
 
-pub const testing = @import("testing.zig");
+const compat = @import("compat.zig");
 
-pub const Dict = @import("Dict.zig");
-pub const List = @import("List.zig");
-pub const StringSet = @import("StringSet.zig");
-pub const StructGen = @import("StructGen.zig");
+const StructInfo = compat.Type.Struct;
+const StructGen = @This();
 
-test "all" {
-    _ = Dict;
-    _ = List;
-    _ = StringSet;
-    _ = StructGen;
+pub inline fn Type(gen: StructGen) type {
+    return compat.TypeFrom(.{ .@"struct" = gen.info });
 }
