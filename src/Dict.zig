@@ -309,9 +309,9 @@ test remove {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.comptryIsTrue(@hasField(dict.backing_struct, "key"));
+        t.comptry(@hasField(dict.backing_struct, "key"));
         dict.remove(.key);
-        t.comptryIsTrue(!@hasField(dict.backing_struct, "key"));
+        t.comptry(!@hasField(dict.backing_struct, "key"));
     }
 }
 
@@ -319,14 +319,14 @@ test removeOrError {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.comptryIsTrue(@hasField(dict.backing_struct, "key"));
-        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
+        t.comptry(@hasField(dict.backing_struct, "key"));
+        t.comptry(!@hasField(dict.backing_struct, "not_key"));
 
         const remove_key = dict.removeOrError(.key);
         const remove_not_key = dict.removeOrError(.not_key);
 
-        t.comptryIsTrue(!@hasField(dict.backing_struct, "key"));
-        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
+        t.comptry(!@hasField(dict.backing_struct, "key"));
+        t.comptry(!@hasField(dict.backing_struct, "not_key"));
 
         t.comptry(std.testing.expectEqual(void{}, remove_key));
         t.comptry(std.testing.expectError(RemoveError.KeyDoesNotExist, remove_not_key));
@@ -337,14 +337,14 @@ test removeOrLeave {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
 
-        t.comptryIsTrue(@hasField(dict.backing_struct, "key"));
-        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
+        t.comptry(@hasField(dict.backing_struct, "key"));
+        t.comptry(!@hasField(dict.backing_struct, "not_key"));
 
         dict.removeOrLeave(.key);
         dict.removeOrLeave(.not_key);
 
-        t.comptryIsTrue(!@hasField(dict.backing_struct, "key"));
-        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
+        t.comptry(!@hasField(dict.backing_struct, "key"));
+        t.comptry(!@hasField(dict.backing_struct, "not_key"));
     }
 }
 
@@ -363,13 +363,13 @@ test setOrError {
         var dict = Dict.from(.{ .key = 1 });
 
         t.comptry(std.testing.expectEqual(1, (dict.backing_struct{}).key));
-        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
+        t.comptry(!@hasField(dict.backing_struct, "not_key"));
 
         const set_key = dict.setOrError(.key, 2);
         const set_not_key = dict.setOrError(.not_key, 2);
 
         t.comptry(std.testing.expectEqual(2, (dict.backing_struct{}).key));
-        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
+        t.comptry(!@hasField(dict.backing_struct, "not_key"));
 
         t.comptry(std.testing.expectEqual(void{}, set_key));
         t.comptry(std.testing.expectError(RemoveError.KeyDoesNotExist, set_not_key));
@@ -381,21 +381,21 @@ test setOrLeave {
         var dict = Dict.from(.{ .key = 1 });
 
         t.comptry(std.testing.expectEqual(1, (dict.backing_struct{}).key));
-        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
+        t.comptry(!@hasField(dict.backing_struct, "not_key"));
 
         dict.setOrLeave(.key, 2);
         dict.setOrLeave(.not_key, 2);
 
         t.comptry(std.testing.expectEqual(2, (dict.backing_struct{}).key));
-        t.comptryIsTrue(!@hasField(dict.backing_struct, "not_key"));
+        t.comptry(!@hasField(dict.backing_struct, "not_key"));
     }
 }
 
 test has {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
-        t.comptryIsTrue(dict.has(.key));
-        t.comptryIsTrue(!dict.has(.not_key));
+        t.comptry(dict.has(.key));
+        t.comptry(!dict.has(.not_key));
     }
 }
 
@@ -419,7 +419,7 @@ test pop {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
         t.comptry(std.testing.expectEqual(1, dict.pop(.key)));
-        t.comptryIsTrue(!dict.has(.key));
+        t.comptry(!dict.has(.key));
     }
 }
 
@@ -434,13 +434,13 @@ test popOrError {
 test popOrLeave {
     comptime {
         var dict = Dict.from(.{ .key = 1 });
-        t.comptryIsTrue(dict.has(.key));
+        t.comptry(dict.has(.key));
 
         const pop1 = dict.popOrLeave(.key);
-        t.comptryIsTrue(!dict.has(.key));
+        t.comptry(!dict.has(.key));
 
         const pop2 = dict.popOrLeave(.key);
-        t.comptryIsTrue(!dict.has(.key));
+        t.comptry(!dict.has(.key));
 
         t.comptry(std.testing.expectEqual(1, pop1));
         t.comptry(std.testing.expectEqual(null, pop2));

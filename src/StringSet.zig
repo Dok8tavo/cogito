@@ -124,8 +124,8 @@ pub inline fn isDisjoint(set1: Set, set2: Set) bool {
 test has {
     comptime {
         const set = Set.from(.{.item});
-        t.comptryIsTrue(set.has(.item));
-        t.comptryIsTrue(!set.has(.not_item));
+        t.comptry(set.has(.item));
+        t.comptry(!set.has(.not_item));
     }
 }
 
@@ -145,14 +145,14 @@ test size {
 test add {
     comptime {
         var set = Set{};
-        t.comptryIsTrue(!set.has(.item));
+        t.comptry(!set.has(.item));
 
         set.add(.item_1);
-        t.comptryIsTrue(set.has(.item_1));
+        t.comptry(set.has(.item_1));
 
         set.add(.item_2);
-        t.comptryIsTrue(set.has(.item_1));
-        t.comptryIsTrue(set.has(.item_2));
+        t.comptry(set.has(.item_1));
+        t.comptry(set.has(.item_2));
     }
 }
 
@@ -172,46 +172,46 @@ test addOrLeave {
     comptime {
         var set = Set{};
 
-        t.comptryIsTrue(!set.has(.item));
+        t.comptry(!set.has(.item));
 
         set.addOrLeave(.item);
-        t.comptryIsTrue(set.has(.item));
+        t.comptry(set.has(.item));
 
         set.addOrLeave(.item);
-        t.comptryIsTrue(set.has(.item));
+        t.comptry(set.has(.item));
     }
 }
 
 test addOrRemove {
     comptime {
         var set = Set{};
-        t.comptryIsTrue(!set.has(.item));
+        t.comptry(!set.has(.item));
 
         set.addOrRemove(.item);
-        t.comptryIsTrue(set.has(.item));
+        t.comptry(set.has(.item));
 
         set.addOrRemove(.item);
-        t.comptryIsTrue(!set.has(.item));
+        t.comptry(!set.has(.item));
 
         set.addOrRemove(.item);
-        t.comptryIsTrue(set.has(.item));
+        t.comptry(set.has(.item));
     }
 }
 
 test remove {
     comptime {
         var set = Set.from(.{.item});
-        t.comptryIsTrue(set.has(.item));
+        t.comptry(set.has(.item));
 
         set.remove(.item);
-        t.comptryIsTrue(!set.has(.item));
+        t.comptry(!set.has(.item));
     }
 }
 
 test removeOrError {
     comptime {
         var set = Set.from(.{.item});
-        t.comptryIsTrue(set.has(.item));
+        t.comptry(set.has(.item));
 
         const not_err = set.removeOrError(.item);
         const yes_err = set.removeOrError(.item);
@@ -224,13 +224,13 @@ test removeOrError {
 test removeOrLeave {
     comptime {
         var set = Set.from(.{.item});
-        t.comptryIsTrue(set.has(.item));
+        t.comptry(set.has(.item));
 
         set.removeOrLeave(.item);
-        t.comptryIsTrue(!set.has(.item));
+        t.comptry(!set.has(.item));
 
         set.removeOrLeave(.item);
-        t.comptryIsTrue(!set.has(.item));
+        t.comptry(!set.has(.item));
     }
 }
 
@@ -240,9 +240,9 @@ test isDisjoint {
         const set2 = Set.from(.{ .b, .c });
         const set3 = Set.from(.{ .c, .d });
 
-        t.comptryIsTrue(!set1.isDisjoint(set2));
-        t.comptryIsTrue(set1.isDisjoint(set3));
-        t.comptryIsTrue(!set2.isDisjoint(set3));
+        t.comptry(!set1.isDisjoint(set2));
+        t.comptry(set1.isDisjoint(set3));
+        t.comptry(!set2.isDisjoint(set3));
     }
 }
 
@@ -253,10 +253,10 @@ test combine {
 
         const set3 = set1.combine(set2);
 
-        t.comptryIsTrue(set3.has(.a));
-        t.comptryIsTrue(set3.has(.b));
-        t.comptryIsTrue(set3.has(.c));
-        t.comptryIsTrue(set3.has(.d));
+        t.comptry(set3.has(.a));
+        t.comptry(set3.has(.b));
+        t.comptry(set3.has(.c));
+        t.comptry(set3.has(.d));
     }
 }
 
@@ -270,10 +270,10 @@ test combineOrError {
 
         const set4 = t.comptry(set1.combineOrError(set3));
 
-        t.comptryIsTrue(set4.has(.a));
-        t.comptryIsTrue(set4.has(.b));
-        t.comptryIsTrue(set4.has(.c));
-        t.comptryIsTrue(set4.has(.d));
+        t.comptry(set4.has(.a));
+        t.comptry(set4.has(.b));
+        t.comptry(set4.has(.c));
+        t.comptry(set4.has(.d));
 
         t.comptry(std.testing.expectError(Dict.AddError.KeyAlreadyExists, set2.combineOrError(set3)));
     }
@@ -289,20 +289,20 @@ test combineOrLeave {
         const set23 = set2.combineOrLeave(set3);
         const set13 = set1.combineOrLeave(set3);
 
-        t.comptryIsTrue(set12.has(.a));
-        t.comptryIsTrue(set12.has(.b));
-        t.comptryIsTrue(set12.has(.c));
-        t.comptryIsTrue(!set12.has(.d));
+        t.comptry(set12.has(.a));
+        t.comptry(set12.has(.b));
+        t.comptry(set12.has(.c));
+        t.comptry(!set12.has(.d));
 
-        t.comptryIsTrue(!set23.has(.a));
-        t.comptryIsTrue(set23.has(.b));
-        t.comptryIsTrue(set23.has(.c));
-        t.comptryIsTrue(set23.has(.d));
+        t.comptry(!set23.has(.a));
+        t.comptry(set23.has(.b));
+        t.comptry(set23.has(.c));
+        t.comptry(set23.has(.d));
 
-        t.comptryIsTrue(set13.has(.a));
-        t.comptryIsTrue(set13.has(.b));
-        t.comptryIsTrue(set13.has(.c));
-        t.comptryIsTrue(set13.has(.d));
+        t.comptry(set13.has(.a));
+        t.comptry(set13.has(.b));
+        t.comptry(set13.has(.c));
+        t.comptry(set13.has(.d));
     }
 }
 
@@ -318,24 +318,24 @@ test intersection {
 
         const set123 = set12.intersection(set23);
 
-        t.comptryIsTrue(!set12.has(.a));
-        t.comptryIsTrue(set12.has(.b));
-        t.comptryIsTrue(!set12.has(.c));
-        t.comptryIsTrue(!set12.has(.d));
+        t.comptry(!set12.has(.a));
+        t.comptry(set12.has(.b));
+        t.comptry(!set12.has(.c));
+        t.comptry(!set12.has(.d));
 
-        t.comptryIsTrue(!set13.has(.a));
-        t.comptryIsTrue(!set13.has(.b));
-        t.comptryIsTrue(!set13.has(.c));
-        t.comptryIsTrue(!set13.has(.d));
+        t.comptry(!set13.has(.a));
+        t.comptry(!set13.has(.b));
+        t.comptry(!set13.has(.c));
+        t.comptry(!set13.has(.d));
 
-        t.comptryIsTrue(!set23.has(.a));
-        t.comptryIsTrue(!set23.has(.b));
-        t.comptryIsTrue(set23.has(.c));
-        t.comptryIsTrue(!set23.has(.d));
+        t.comptry(!set23.has(.a));
+        t.comptry(!set23.has(.b));
+        t.comptry(set23.has(.c));
+        t.comptry(!set23.has(.d));
 
-        t.comptryIsTrue(!set123.has(.a));
-        t.comptryIsTrue(!set123.has(.b));
-        t.comptryIsTrue(!set123.has(.c));
-        t.comptryIsTrue(!set123.has(.d));
+        t.comptry(!set123.has(.a));
+        t.comptry(!set123.has(.b));
+        t.comptry(!set123.has(.c));
+        t.comptry(!set123.has(.d));
     }
 }

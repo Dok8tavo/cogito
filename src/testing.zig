@@ -35,6 +35,9 @@ pub inline fn Payload(error_union: anytype) type {
     return switch (info) {
         .error_union => |eu| eu.payload,
         .error_set => NoReturn,
+        .null => NoReturn,
+        .optional => |opt| opt.child,
+        .bool => void,
         else => unreachable,
     };
 }
@@ -48,11 +51,26 @@ pub inline fn ErrorSet(error_union: anytype) type {
     };
 }
 
-pub inline fn comptry(error_union: anytype) Payload(error_union) {
-    return error_union catch |err| compileError("`{s}.{s}`", .{
-        @typeName(ErrorSet(error_union)),
-        @errorName(err),
-    });
+pub inline fn comptry(result: anytype) Payload(result) {
+    const Result = @TypeOf(result);
+    const info = compat.typeInfo(Result);
+    return switch (info) {
+        .error_union => result catch |err| compileError("`{s}.{s}`", .{
+            @typeName(ErrorSet(result)),
+            @errorName(err),
+        }),
+        .error_set => compileError("`{s}.{s}`", .{
+            @typeName(Result),
+            @errorName(result),
+        }),
+        .null => @compileError("Found `null`!"),
+        .optional => result orelse compileError(
+            "Expected an instance of `{s}`, found `null`!",
+            .{@typeName(Result)},
+        ),
+        .bool => if (!result) @compileError("Expected `true`, found `false`!"),
+        else => unreachable,
+    };
 }
 
 pub inline fn comptryEqualStrings(a: []const u8, b: []const u8) void {
@@ -60,11 +78,6 @@ pub inline fn comptryEqualStrings(a: []const u8, b: []const u8) void {
         "The two compared strings don't have the same content:\na: \"{s}\"\nb: \"{s}\"",
         .{ a, b },
     );
-}
-
-pub inline fn comptryIsTrue(value: bool) void {
-    if (!value)
-        @compileError("Comptried `false`!");
 }
 
 pub inline fn comptimeEqualStrings(a: []const u8, b: []const u8) bool {

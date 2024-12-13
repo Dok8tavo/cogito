@@ -73,7 +73,7 @@ test addField {
         struct_gen.addField(.{ .name = "some_field", .type = void });
         const NonEmptyStruct = struct_gen.Type();
 
-        t.comptryIsTrue(!@hasField(EmptyStruct, "some_field"));
-        t.comptryIsTrue(@hasField(NonEmptyStruct, "some_field"));
+        t.comptry(!@hasField(EmptyStruct, "some_field"));
+        t.comptry(@hasField(NonEmptyStruct, "some_field"));
     }
 }
