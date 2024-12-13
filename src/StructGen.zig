@@ -55,7 +55,7 @@ pub inline fn getBackingInteger(gen: StructGen) ?type {
 }
 
 // == Add field ==
-pub const AddError = error{AlreadyExists};
+pub const AddError = error{FieldAlreadyExists};
 pub inline fn addField(gen: *StructGen, field: FieldInfo) void {
     gen.info.fields = gen.info.fields ++ &[_]FieldInfo{field};
 }
@@ -63,12 +63,27 @@ pub inline fn addField(gen: *StructGen, field: FieldInfo) void {
 pub inline fn addFieldOrError(gen: *StructGen, field: FieldInfo) AddError!void {
     for (0..gen.info.fields.len) |index|
         if (t.comptimeEqualStrings(field.name, gen.info.fields[index].name))
-            return AddError.AlreadyExists;
+            return AddError.FieldAlreadyExists;
     gen.addField(field);
 }
 
 pub inline fn addOrSetField(gen: *StructGen, field: FieldInfo) void {
     gen.addFieldOrError(field) catch gen.setField(field.name, field);
+}
+
+// == Remove field ==
+pub inline fn removeField(gen: *StructGen, field_name: []const u8) void {
+    const index = for (0..gen.info.fields.len) |index| {
+        if (t.comptimeEqualStrings(field_name, gen.info.fields[index].name))
+            break index;
+    } else t.compileError("Field `{s}` does not exist!", .{field_name});
+
+    var new_fields: []const FieldInfo = if (index != 0) gen.info.fields[0..index] else &.{};
+
+    if (index + 1 != gen.info.fields.len)
+        new_fields = new_fields ++ gen.info.fields[index + 1 ..];
+
+    gen.info.fields = new_fields;
 }
 
 // == Access field ==
@@ -116,6 +131,19 @@ pub inline fn setField(gen: *StructGen, field_name: []const u8, new: anytype) vo
 }
 
 // == Testing ==
+test removeField {
+    comptime {
+        var struct_gen = StructGen{};
+        struct_gen.addField(.{ .name = "my field", .type = bool });
+        struct_gen.addField(.{ .name = "my other field", .type = bool });
+        t.comptry(struct_gen.hasField("my field"));
+        t.comptry(struct_gen.hasField("my other field"));
+        struct_gen.removeField("my field");
+        t.comptry(!struct_gen.hasField("my field"));
+        t.comptry(struct_gen.hasField("my other field"));
+    }
+}
+
 test hasField {
     comptime {
         var struct_gen = StructGen{};
@@ -130,7 +158,7 @@ test addFieldOrError {
     comptime {
         var struct_gen = StructGen{};
         t.comptry(struct_gen.addFieldOrError(.{ .name = "my field", .type = bool }));
-        t.comptry(struct_gen.addFieldOrError(.{ .name = "my field", .type = bool }) == AddError.AlreadyExists);
+        t.comptry(struct_gen.addFieldOrError(.{ .name = "my field", .type = bool }) == AddError.FieldAlreadyExists);
     }
 }
 
