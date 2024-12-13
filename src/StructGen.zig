@@ -67,22 +67,45 @@ pub inline fn getField(gen: *StructGen, field_name: []const u8) ?FieldInfo {
 }
 
 pub inline fn setField(gen: *StructGen, field_name: []const u8, new: anytype) void {
-    for (0..gen.info.fields) |index| {
+    for (0..gen.info.fields.len) |index| {
         if (t.comptimeEqualStrings(field_name, gen.info.fields[index].name)) {
             const New = @TypeOf(new);
+            var new_field = gen.info.fields[index];
             if (@hasField(New, "alignment"))
-                gen.info.fields[index].alignment = new.alignment;
+                new_field.alignment = new.alignment;
             if (@hasField(New, "default_value"))
-                gen.info.fields[index].default_value = new.default_value;
-            if (@hasField(new, "is_comptime"))
-                gen.info.fields[index].is_comptime = new.is_comptime;
+                new_field.default_value = new.default_value;
+            if (@hasField(New, "is_comptime"))
+                new_field.is_comptime = new.is_comptime;
             if (@hasField(New, "name"))
-                gen.info.fields[index].name = new.name;
+                new_field.name = new.name;
             if (@hasField(New, "type"))
-                gen.info.fields[index].type = new.type;
+                new_field.type = new.type;
+            var new_fields: []const FieldInfo =
+                if (index != 0) gen.info.fields[0..index] else &.{};
+
+            new_fields = new_fields ++ &[_]FieldInfo{new_field};
+
+            if (index + 1 != gen.info.fields.len)
+                new_fields = new_fields ++ gen.info.fields[index + 1 ..];
+
+            gen.info.fields = new_fields;
             return;
         }
     } else t.compileError("Couldn't find field named `{s}`!", .{field_name});
+}
+
+// == Testing ==
+test setField {
+    comptime {
+        var struct_gen = StructGen{};
+        struct_gen.addField(.{ .name = "my field", .type = bool });
+        struct_gen.setField("my field", .{ .name = "your field" });
+
+        t.comptry(struct_gen.getField("my field") == null);
+        const your_field = t.comptry(struct_gen.getField("your field"));
+        t.comptry(bool == your_field.type);
+    }
 }
 
 test getField {
