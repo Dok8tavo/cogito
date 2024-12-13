@@ -72,11 +72,12 @@ pub inline fn addOrSetField(gen: *StructGen, field: FieldInfo) void {
 }
 
 // == Remove field ==
-pub inline fn removeField(gen: *StructGen, field_name: []const u8) void {
+pub const RemoveError = error{FieldDoesNotExist};
+pub inline fn removeFieldOrError(gen: *StructGen, field_name: []const u8) RemoveError!void {
     const index = for (0..gen.info.fields.len) |index| {
         if (t.comptimeEqualStrings(field_name, gen.info.fields[index].name))
             break index;
-    } else t.compileError("Field `{s}` does not exist!", .{field_name});
+    } else return RemoveError.FieldDoesNotExist;
 
     var new_fields: []const FieldInfo = if (index != 0) gen.info.fields[0..index] else &.{};
 
@@ -84,6 +85,10 @@ pub inline fn removeField(gen: *StructGen, field_name: []const u8) void {
         new_fields = new_fields ++ gen.info.fields[index + 1 ..];
 
     gen.info.fields = new_fields;
+}
+
+pub inline fn removeField(gen: *StructGen, field_name: []const u8) void {
+    t.comptry(gen.removeFieldOrError(field_name));
 }
 
 // == Access field ==
@@ -131,6 +136,15 @@ pub inline fn setField(gen: *StructGen, field_name: []const u8, new: anytype) vo
 }
 
 // == Testing ==
+test removeFieldOrError {
+    comptime {
+        var struct_gen = StructGen{};
+        struct_gen.addField(.{ .name = "my field", .type = bool });
+        t.comptry(struct_gen.removeFieldOrError("my field"));
+        t.comptry(struct_gen.removeFieldOrError("my other field") == RemoveError.FieldDoesNotExist);
+    }
+}
+
 test removeField {
     comptime {
         var struct_gen = StructGen{};
