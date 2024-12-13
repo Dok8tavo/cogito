@@ -58,11 +58,30 @@ pub inline fn addField(gen: *StructGen, field: FieldInfo) void {
     gen.info.fields = gen.info.fields ++ &[_]FieldInfo{field};
 }
 
-pub inline fn getField(gen: *StructGen, field_name: []const u8) ?*FieldInfo {
+pub inline fn getField(gen: *StructGen, field_name: []const u8) ?FieldInfo {
     return for (0..gen.info.fields) |index| {
         if (t.comptimeEqualStrings(field_name, gen.info.fields[index].name))
-            break &gen.info.fields[index];
+            break gen.info.fields[index];
     } else null;
+}
+
+pub inline fn setField(gen: *StructGen, field_name: []const u8, new: anytype) void {
+    for (0..gen.info.fields) |index| {
+        if (t.comptimeEqualStrings(field_name, gen.info.fields[index].name)) {
+            const New = @TypeOf(new);
+            if (@hasField(New, "alignment"))
+                gen.info.fields[index].alignment = new.alignment;
+            if (@hasField(New, "default_value"))
+                gen.info.fields[index].default_value = new.default_value;
+            if (@hasField(new, "is_comptime"))
+                gen.info.fields[index].is_comptime = new.is_comptime;
+            if (@hasField(New, "name"))
+                gen.info.fields[index].name = new.name;
+            if (@hasField(New, "type"))
+                gen.info.fields[index].type = new.type;
+            return;
+        }
+    } else t.compileError("Couldn't find field named `{s}`!", .{field_name});
 }
 
 test addField {

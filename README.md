@@ -8,8 +8,8 @@ following types:
 
 - `List`,
 - `Dict`, 
-- `String`,
 - `StringSet`,
+- `StructGen`,
 
 ## Usage
 
