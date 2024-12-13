@@ -31,3 +31,19 @@ const StructGen = @This();
 pub inline fn Type(gen: StructGen) type {
     return compat.TypeFrom(.{ .@"struct" = gen.info });
 }
+
+pub inline fn setLayout(gen: *StructGen, layout: compat.Type.Layout) void {
+    gen.info.layout = layout;
+}
+
+pub inline fn getLayout(gen: StructGen) compat.Type.Layout {
+    return gen.info.layout;
+}
+
+pub inline fn setBackingInteger(gen: *StructGen, backing_integer: ?type) void {
+    gen.info.backing_integer = backing_integer;
+}
+
+pub inline fn getBackingInteger(gen: StructGen) ?type {
+    return gen.info.backing_integer;
+}
