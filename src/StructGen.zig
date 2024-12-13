@@ -55,10 +55,23 @@ pub inline fn getBackingInteger(gen: StructGen) ?type {
 }
 
 // == Add field ==
+pub const AddError = error{AlreadyExists};
 pub inline fn addField(gen: *StructGen, field: FieldInfo) void {
     gen.info.fields = gen.info.fields ++ &[_]FieldInfo{field};
 }
 
+pub inline fn addFieldOrError(gen: *StructGen, field: FieldInfo) AddError!void {
+    for (0..gen.info.fields.len) |index|
+        if (t.comptimeEqualStrings(field.name, gen.info.fields[index].name))
+            return AddError.AlreadyExists;
+    gen.addField(field);
+}
+
+pub inline fn addOrSetField(gen: *StructGen, field: FieldInfo) void {
+    gen.addFieldOrError(field) catch gen.setField(field.name, field);
+}
+
+// == Access field ==
 pub inline fn getField(gen: *StructGen, field_name: []const u8) ?FieldInfo {
     return for (0..gen.info.fields.len) |index| {
         if (t.comptimeEqualStrings(field_name, gen.info.fields[index].name))
@@ -96,6 +109,32 @@ pub inline fn setField(gen: *StructGen, field_name: []const u8, new: anytype) vo
 }
 
 // == Testing ==
+test addFieldOrError {
+    comptime {
+        var struct_gen = StructGen{};
+        t.comptry(struct_gen.addFieldOrError(.{ .name = "my field", .type = bool }));
+        t.comptry(struct_gen.addFieldOrError(.{ .name = "my field", .type = bool }) == AddError.AlreadyExists);
+    }
+}
+
+test addOrSetField {
+    comptime {
+        var struct_gen = StructGen{};
+
+        struct_gen.addOrSetField(.{ .name = "my field", .type = bool });
+        const MyFieldBool = struct_gen.Type();
+
+        t.comptry(@hasField(MyFieldBool, "my field"));
+        t.comptry(@TypeOf(@field(@as(MyFieldBool, undefined), "my field")) == bool);
+
+        struct_gen.addOrSetField(.{ .name = "my field", .type = u8 });
+        const MyFieldByte = struct_gen.Type();
+
+        t.comptry(@hasField(MyFieldByte, "my field"));
+        t.comptry(@TypeOf(@field(@as(MyFieldByte, undefined), "my field")) == u8);
+    }
+}
+
 test setField {
     comptime {
         var struct_gen = StructGen{};
