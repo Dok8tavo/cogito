@@ -136,6 +136,55 @@ pub inline fn setField(gen: *StructGen, field_name: []const u8, new: anytype) vo
 }
 
 // == Ordering fields ==
+inline fn hasBiggerAlignement(a: FieldInfo, b: FieldInfo) bool {
+    const a_alignment = a.alignment orelse @alignOf(a.type);
+    const b_alignment = b.alignment orelse @alignOf(b.type);
+    return b_alignment < a_alignment;
+}
+inline fn hasBiggerSize(a: FieldInfo, b: FieldInfo) bool {
+    const a_size = @bitSizeOf(a.type);
+    const b_size = @bitSizeOf(b.type);
+    return b_size < a_size;
+}
+pub inline fn hasBiggerAlignementOrSize(a: FieldInfo, b: FieldInfo) bool {
+    return hasBiggerAlignement(a, b) or hasBiggerSize(a, b);
+}
+
+pub inline fn sortFieldsByIsFirst(gen: *StructGen, isFirst: fn (FieldInfo, FieldInfo) bool) void {
+    const sort = struct {
+        pub inline fn call(fields: []const FieldInfo) ?usize {
+            if (fields.len == 0) return null;
+            if (fields.len == 1) return 0;
+            var first_index: usize = 0;
+            for (fields[1..], 1..) |field, index| {
+                const first_field = fields[first_index];
+                if (isFirst(field.name, first_field.name))
+                    first_index = index;
+            }
+
+            return first_index;
+        }
+    };
+
+    return gen.sortFieldsByFirstIn(sort.call);
+}
+
+pub inline fn sortFieldsByFirstIn(gen: *StructGen, first: fn ([]const FieldInfo) ?usize) void {
+    const sort = struct {
+        pub inline fn call(fields: []const FieldInfo) []const FieldInfo {
+            if (fields.len == 0 or fields.len == 1) return fields;
+            var sorted: [fields.len]FieldInfo = @as(*const [fields.len]FieldInfo, @ptrCast(fields)).*;
+            for (0..fields.len) |index| {
+                const first_index = first(sorted[index..]).?;
+                std.mem.swap(FieldInfo, &sorted[index], &sorted[index + first_index]);
+            }
+            return &sorted;
+        }
+    };
+
+    return gen.sortFields(sort.call);
+}
+
 pub inline fn sortFields(gen: *StructGen, sort: fn ([]const FieldInfo) []const FieldInfo) void {
     gen.info.fields = sort(gen.info.fields);
 }
