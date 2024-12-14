@@ -135,7 +135,66 @@ pub inline fn setField(gen: *StructGen, field_name: []const u8, new: anytype) vo
     } else t.compileError("Couldn't find field named `{s}`!", .{field_name});
 }
 
+// == Ordering fields ==
+pub inline fn sortFields(gen: *StructGen, sort: fn ([]const FieldInfo) []const FieldInfo) void {
+    gen.info.fields = sort(gen.info.fields);
+}
+
 // == Testing ==
+test sortFields {
+    const alphabetical = struct {
+        fn comesFirst(a: []const u8, b: []const u8) bool {
+            const min = @min(a.len, b.len);
+            return for (a[0..min], b[0..min]) |c, d| {
+                if (c < d) break true;
+                if (d < c) break false;
+            } else a.len < b.len;
+        }
+        fn firstIn(fields: []const FieldInfo) usize {
+            if (fields.len == 1) return 0;
+            var first_index: usize = 0;
+            for (fields[1..], 1..) |field, index| {
+                const first_field = fields[first_index];
+                if (comesFirst(field.name, first_field.name))
+                    first_index = index;
+            }
+
+            return first_index;
+        }
+        fn sort(fields: []const FieldInfo) []const FieldInfo {
+            var sorted: [fields.len]FieldInfo = @as(*const [fields.len]FieldInfo, @ptrCast(fields)).*;
+            for (0..fields.len) |index| {
+                const first_index = firstIn(sorted[index..]);
+                std.mem.swap(FieldInfo, &sorted[index], &sorted[index + first_index]);
+            }
+            return &sorted;
+        }
+    };
+
+    comptime {
+        var struct_gen = StructGen{};
+        struct_gen.addField(.{ .name = "e", .type = void });
+        struct_gen.addField(.{ .name = "d", .type = void });
+        struct_gen.addField(.{ .name = "c", .type = void });
+        struct_gen.addField(.{ .name = "b", .type = void });
+        struct_gen.addField(.{ .name = "a", .type = void });
+
+        t.comptryEqualStrings(struct_gen.info.fields[0].name, "e");
+        t.comptryEqualStrings(struct_gen.info.fields[1].name, "d");
+        t.comptryEqualStrings(struct_gen.info.fields[2].name, "c");
+        t.comptryEqualStrings(struct_gen.info.fields[3].name, "b");
+        t.comptryEqualStrings(struct_gen.info.fields[4].name, "a");
+
+        struct_gen.sortFields(alphabetical.sort);
+
+        t.comptryEqualStrings(struct_gen.info.fields[0].name, "a");
+        t.comptryEqualStrings(struct_gen.info.fields[1].name, "b");
+        t.comptryEqualStrings(struct_gen.info.fields[2].name, "c");
+        t.comptryEqualStrings(struct_gen.info.fields[3].name, "d");
+        t.comptryEqualStrings(struct_gen.info.fields[4].name, "e");
+    }
+}
+
 test removeFieldOrError {
     comptime {
         var struct_gen = StructGen{};
