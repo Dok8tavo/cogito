@@ -36,6 +36,33 @@ pub inline fn Type(gen: StructGen) type {
     return compat.TypeFrom(.{ .@"struct" = gen.info });
 }
 
+pub inline fn from(any_struct: anytype) StructGen {
+    const AnyStruct = @TypeOf(any_struct);
+    if (StructGen == AnyStruct)
+        return any_struct;
+    if (compat.Type.Struct == AnyStruct)
+        return StructGen{ .info = any_struct };
+    if (compat.Type == AnyStruct) return switch (any_struct) {
+        .@"struct" => |@"struct"| StructGen{ .info = @"struct" },
+        else => t.compileError("Expected `.struct`, got `.{s}` instead!", .{@tagName(any_struct)}),
+    };
+
+    // compat.Type
+    if (AnyStruct == type) {
+        const info = compat.typeInfo(any_struct);
+        return StructGen.from(info);
+    }
+    // compat.Type
+    if (AnyStruct == std.builtin.Type)
+        return StructGen.from(compat.Type.fromStd(any_struct));
+    // compat.Type.Struct
+    if (AnyStruct == std.builtin.Type.Struct)
+        return StructGen.from(compat.Type.Struct.fromStd(any_struct));
+
+    const info = compat.typeInfo(AnyStruct);
+    return StructGen.from(info);
+}
+
 // == Layout ==
 pub inline fn setLayout(gen: *StructGen, layout: Layout) void {
     gen.info.layout = layout;
@@ -190,6 +217,58 @@ pub inline fn sortFields(gen: *StructGen, sort: fn ([]const FieldInfo) []const F
 }
 
 // == Testing ==
+test from {
+    comptime {
+        const Abc = struct {
+            a: u1 = 0,
+            b: u2 = 0,
+            c: u3 = 0,
+        };
+
+        const abc = Abc{};
+
+        const abc_info = compat.typeInfo(Abc);
+        const abc_std_info = @typeInfo(Abc);
+
+        const abc_struct_info = abc_info.@"struct";
+        const abc_std_struct_info = if (@hasField(std.builtin.Type, "Struct"))
+            abc_std_info.Struct
+        else
+            abc_std_info.@"struct";
+
+        const gen_type = StructGen.from(Abc);
+        const gen_instance = StructGen.from(abc);
+        const gen_info = StructGen.from(abc_info);
+        const gen_std_info = StructGen.from(abc_std_info);
+        const gen_struct_info = StructGen.from(abc_struct_info);
+        const gen_std_struct_info = StructGen.from(abc_std_struct_info);
+
+        t.comptry(gen_type.hasField("a"));
+        t.comptry(gen_type.hasField("b"));
+        t.comptry(gen_type.hasField("c"));
+
+        t.comptry(gen_instance.hasField("a"));
+        t.comptry(gen_instance.hasField("b"));
+        t.comptry(gen_instance.hasField("c"));
+
+        t.comptry(gen_info.hasField("a"));
+        t.comptry(gen_info.hasField("b"));
+        t.comptry(gen_info.hasField("c"));
+
+        t.comptry(gen_std_info.hasField("a"));
+        t.comptry(gen_std_info.hasField("b"));
+        t.comptry(gen_std_info.hasField("c"));
+
+        t.comptry(gen_struct_info.hasField("a"));
+        t.comptry(gen_struct_info.hasField("b"));
+        t.comptry(gen_struct_info.hasField("c"));
+
+        t.comptry(gen_std_struct_info.hasField("a"));
+        t.comptry(gen_std_struct_info.hasField("b"));
+        t.comptry(gen_std_struct_info.hasField("c"));
+    }
+}
+
 test sortFields {
     const alphabetical = struct {
         fn comesFirst(a: []const u8, b: []const u8) bool {
