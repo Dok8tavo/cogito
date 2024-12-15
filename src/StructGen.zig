@@ -179,13 +179,13 @@ pub inline fn hasBiggerAlignementOrSize(a: FieldInfo, b: FieldInfo) bool {
 
 pub inline fn sortFieldsByIsFirst(gen: *StructGen, isFirst: fn (FieldInfo, FieldInfo) bool) void {
     const sort = struct {
-        pub inline fn call(fields: []const FieldInfo) ?usize {
+        pub fn call(fields: []const FieldInfo) ?usize {
             if (fields.len == 0) return null;
             if (fields.len == 1) return 0;
             var first_index: usize = 0;
             for (fields[1..], 1..) |field, index| {
                 const first_field = fields[first_index];
-                if (isFirst(field.name, first_field.name))
+                if (isFirst(field, first_field))
                     first_index = index;
             }
 
@@ -198,7 +198,7 @@ pub inline fn sortFieldsByIsFirst(gen: *StructGen, isFirst: fn (FieldInfo, Field
 
 pub inline fn sortFieldsByFirstIn(gen: *StructGen, first: fn ([]const FieldInfo) ?usize) void {
     const sort = struct {
-        pub inline fn call(fields: []const FieldInfo) []const FieldInfo {
+        pub fn call(fields: []const FieldInfo) []const FieldInfo {
             if (fields.len == 0 or fields.len == 1) return fields;
             var sorted: [fields.len]FieldInfo = @as(*const [fields.len]FieldInfo, @ptrCast(fields)).*;
             for (0..fields.len) |index| {
@@ -271,31 +271,14 @@ test from {
 
 test sortFields {
     const alphabetical = struct {
-        fn comesFirst(a: []const u8, b: []const u8) bool {
+        fn isFirst(field_a: FieldInfo, field_b: FieldInfo) bool {
+            const a = field_a.name;
+            const b = field_b.name;
             const min = @min(a.len, b.len);
             return for (a[0..min], b[0..min]) |c, d| {
                 if (c < d) break true;
                 if (d < c) break false;
             } else a.len < b.len;
-        }
-        fn firstIn(fields: []const FieldInfo) usize {
-            if (fields.len == 1) return 0;
-            var first_index: usize = 0;
-            for (fields[1..], 1..) |field, index| {
-                const first_field = fields[first_index];
-                if (comesFirst(field.name, first_field.name))
-                    first_index = index;
-            }
-
-            return first_index;
-        }
-        fn sort(fields: []const FieldInfo) []const FieldInfo {
-            var sorted: [fields.len]FieldInfo = @as(*const [fields.len]FieldInfo, @ptrCast(fields)).*;
-            for (0..fields.len) |index| {
-                const first_index = firstIn(sorted[index..]);
-                std.mem.swap(FieldInfo, &sorted[index], &sorted[index + first_index]);
-            }
-            return &sorted;
         }
     };
 
@@ -313,7 +296,7 @@ test sortFields {
         t.comptryEqualStrings(struct_gen.info.fields[3].name, "b");
         t.comptryEqualStrings(struct_gen.info.fields[4].name, "a");
 
-        struct_gen.sortFields(alphabetical.sort);
+        struct_gen.sortFieldsByIsFirst(alphabetical.isFirst);
 
         t.comptryEqualStrings(struct_gen.info.fields[0].name, "a");
         t.comptryEqualStrings(struct_gen.info.fields[1].name, "b");
