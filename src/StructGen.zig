@@ -98,6 +98,10 @@ pub inline fn addOrSetField(gen: *StructGen, field: FieldInfo) void {
     gen.addFieldOrError(field) catch gen.setField(field.name, field);
 }
 
+pub inline fn addOrLeaveField(gen: *StructGen, field: FieldInfo) void {
+    gen.addFieldOrError(field) catch {};
+}
+
 // == Remove field ==
 pub const RemoveError = error{FieldDoesNotExist};
 pub inline fn removeFieldOrError(gen: *StructGen, field_name: []const u8) RemoveError!void {
@@ -217,6 +221,21 @@ pub inline fn sortFields(gen: *StructGen, sort: fn ([]const FieldInfo) []const F
 }
 
 // == Testing ==
+test addOrLeaveField {
+    comptime {
+        var struct_gen = StructGen{};
+        t.comptry(!struct_gen.hasField("a"));
+
+        struct_gen.addOrLeaveField(.{ .name = "a", .type = void });
+        t.comptry(struct_gen.hasField("a"));
+        t.comptry(struct_gen.getField("a").?.type == void);
+
+        struct_gen.addOrLeaveField(.{ .name = "a", .type = u8 });
+        t.comptry(struct_gen.hasField("a"));
+        t.comptry(struct_gen.getField("a").?.type == void);
+    }
+}
+
 test from {
     comptime {
         const Abc = struct {
