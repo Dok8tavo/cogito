@@ -21,20 +21,38 @@
 // SOFTWARE.
 //
 
+bytes: []const u8 = "",
+
 const std = @import("std");
+const t = @import("testing.zig");
 
-pub const testing = @import("testing.zig");
+const String = @This();
 
-pub const Dict = @import("Dict.zig");
-pub const List = @import("List.zig");
-pub const String = @import("String.zig");
-pub const StringSet = @import("StringSet.zig");
-pub const StructGen = @import("StructGen.zig");
+pub inline fn print(string: *String, comptime fmt: []const u8, args: anytype) void {
+    string.writeAll(std.fmt.comptimePrint(fmt, args));
+}
+pub inline fn writeBytesNTimes(string: *String, bytes: []const u8, n: usize) void {
+    string.bytes = string.bytes ++ (bytes ** n);
+}
+pub inline fn writeByteNTimes(string: *String, byte: u8, n: usize) void {
+    string.bytes = string.bytes ++ (&[1]u8{byte} ** n);
+}
+pub inline fn writeByte(string: *String, byte: u8) void {
+    string.bytes = string.bytes ++ &[1]u8{byte};
+}
+pub inline fn writeAll(string: *String, bytes: []const u8) void {
+    _ = string.write(bytes);
+}
+pub inline fn write(string: *String, bytes: []const u8) usize {
+    string.bytes = string.bytes ++ bytes;
+    return bytes.len;
+}
 
-test "all" {
-    _ = Dict;
-    _ = List;
-    _ = String;
-    _ = StringSet;
-    _ = StructGen;
+test print {
+    comptime {
+        var string = String{};
+        string.print("Hello {s}!", .{"world"});
+
+        t.comptryEqualStrings(string.bytes, "Hello world!");
+    }
 }
