@@ -7,7 +7,8 @@ to use the same kind of abstractions as dynamically-typed languages. Cogito impl
 following types:
 
 - `List`,
-- `Dict`, 
+- `Dict`,
+- `String`,
 - `StringSet`,
 - `StructGen`,
 
